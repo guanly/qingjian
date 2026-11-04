@@ -198,17 +198,42 @@ fn code_commits_still_feed_translations_vocabulary_and_usage() {
 }
 
 #[test]
-fn mixed_input_orders_finished_codes_then_pinyin_then_code_prefixes() {
+fn mixed_input_orders_finished_codes_then_code_prefixes_then_pinyin() {
     let mut engine = mixed();
-    // `kai`：编码打全的 甲 在最前，拼音的 开 一族居中，只命中前缀的 乙丙（`kaik`）垫后
+    // `kai`：编码打全的 甲 在最前，只命中前缀的 乙丙（`kaik`）紧随其后，拼音的 开 一族排在后面
     let texts = code_texts(&mut engine, "kai");
     assert_eq!(texts.first().map(String::as_str), Some("甲"));
     let position = |text: &str| texts.iter().position(|t| t == text).unwrap();
-    assert!(position("开") < position("乙丙"));
-    // `ka`：没有打全的编码，拼音的首选不被前缀命中的形码词顶掉
+    assert!(position("乙丙") < position("开"));
+    // `ka`：没有打全的编码，前缀命中的候选同样排在拼音的前面
     let texts = code_texts(&mut engine, "ka");
-    assert_ne!(texts.first().map(String::as_str), Some("甲"));
+    assert_ne!(texts.first().map(String::as_str), Some("开"));
     assert!(texts.contains(&"甲".to_owned()));
+}
+
+#[test]
+fn mixed_input_keeps_extra_code_prefixes_behind_pinyin() {
+    // 前缀命中超过 MIXED_CODE_PREFIX_LEAD 条时，只有前几条提到拼音前面，其余垫后
+    let mut codes = String::from("甲\tkai\t1000\n");
+    for (index, letter) in "abcdefgh".chars().enumerate() {
+        codes.push_str(&format!(
+            "前缀{index}\tkaik{letter}\t{}\n",
+            900 - index as u32 * 10
+        ));
+    }
+    let mut engine = engine();
+    engine.set_code_scheme(Some(CodeScheme::new(
+        "wubi",
+        CodeTable::parse(&codes).unwrap(),
+    )));
+    let texts = code_texts(&mut engine, "kai");
+    let position = |text: &str| texts.iter().position(|t| t == text).unwrap();
+    // 编码打全的 甲 之后是前 6 条前缀命中，然后才是拼音
+    assert_eq!(texts.first().map(String::as_str), Some("甲"));
+    assert!(position("前缀0") < position("开"));
+    assert!(position("前缀5") < position("开"));
+    // 第 7 条起垫在拼音之后
+    assert!(position("开") < position("前缀6"));
 }
 
 #[test]

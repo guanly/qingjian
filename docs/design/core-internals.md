@@ -60,7 +60,7 @@ Engine::query()      engine/query/mod.rs，最热的一条路
       │     问字键开头（u / ?）       → query_question    本地没有候选，答案等云端；u4e00 这类码点直接给字
       │     is_raw（含 - . 这类）     → query_raw         英文直输段，唯一候选就是原文
       │     有码表、拼音关            → query_code        五笔：码表前缀查，没有切分 / 纠错 / 整句
-      │     有码表、拼音开            → query_mixed       混输：形码「编码打全」的排最前，其余与拼音合并
+      │     有码表、拼音开            → query_mixed       混输：形码「编码打全」的排最前，前缀命中跟其后，再是拼音
       │     其余                      → query_phonetic   ↓
       │
       ├─ decode                双拼 / 注音先解成全拼（Decoded），之后与全拼同路

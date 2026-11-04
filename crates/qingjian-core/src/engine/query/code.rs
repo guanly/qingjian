@@ -9,6 +9,10 @@ use crate::{
     Candidate, CandidateKind, CandidateList, Engine, ParseError, Query, Timings, ranking, sentence,
 };
 
+/// 混输时把只命中前缀的形码候选提到拼音前面的条数：更长的前缀命中是猜测，留几条表达「先看五笔」，
+/// 剩下的仍垫在最后，拼音候选不至于被挤到几十位之后。
+const MIXED_CODE_PREFIX_LEAD: usize = 6;
+
 impl Engine {
     /// 形码方案（五笔）的候选：编码打全的词排在同前缀的更长编码词前面，其余按词频与上下文。
     ///
@@ -125,11 +129,13 @@ impl Engine {
         (query, exact)
     }
 
-    /// 混输：形码与拼音两边都出候选。**编码打全的形码词在最前，其次拼音，只命中前缀的形码词垫后。**
+    /// 混输：形码与拼音两边都出候选。**形码命中一律排在拼音前面**：先编码打全的词，再只命中前缀的词，
+    /// 然后才是拼音，最后是前缀命中里超出 [`MIXED_CODE_PREFIX_LEAD`] 的那部分。
     ///
-    /// 打全的编码是精确的（`ga` 就是 开）；只敲了前缀的形码词一律放前面的话，`kai` 的首选会变成
-    /// 编码 `kaik` 的 中共党员，拼音就没法用了。拼音那条路给不出解析时（`ggll` 切不成音节）不算失败，
-    /// 整个查询按形码的结果走；五笔码最长 4 位，第 5 个字母起形码查不到东西，自然只剩拼音。
+    /// 只命中前缀的形码词是按词频排的猜测（`wo` 能带出三十多条 `woxx` 的生僻词），全放前面会把拼音候选
+    /// 挤到几十位之后，所以只把最像的几条提到拼音之前，其余仍垫在最后兜底。拼音那条路给不出解析时
+    /// （`ggll` 切不成音节）不算失败，整个查询按形码的结果走；五笔码最长 4 位，第 5 个字母起形码查不到东西，
+    /// 自然只剩拼音。
     pub(super) fn query_mixed(
         &self,
         keys: &str,
@@ -147,13 +153,16 @@ impl Engine {
                 return Ok(code);
             }
         };
-        let mut prefixed = code.candidates.items;
-        let exact = exact.min(prefixed.len());
-        let tail = prefixed.split_off(exact);
+        let mut exact_items = code.candidates.items;
+        let exact = exact.min(exact_items.len());
+        let mut prefixed = exact_items.split_off(exact);
+        // 前缀命中里最像的几条紧随全码之后，其余仍垫在拼音后面
+        let tail = prefixed.split_off(prefixed.len().min(MIXED_CODE_PREFIX_LEAD));
         // 同一个词可能两边都命中，按文本去重，靠前的那条留着
         let mut seen: HashSet<String> = HashSet::new();
-        let combined: Vec<Candidate> = prefixed
+        let combined: Vec<Candidate> = exact_items
             .into_iter()
+            .chain(prefixed)
             .chain(std::mem::take(&mut query.candidates.items))
             .chain(tail)
             .filter(|candidate| seen.insert(candidate.text.clone()))
