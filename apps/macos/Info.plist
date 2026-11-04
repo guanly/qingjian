@@ -24,7 +24,10 @@
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
-	<key>LSBackgroundOnly</key>
+	<!-- 输入法进程是菜单栏后的常驻程序：不占 Dock、没有自己的菜单栏，但**必须是 agent（LSUIElement）**，
+	     不能是 LSBackgroundOnly——纯后台进程连窗口都成不了 key window，弹出来的对话框一个字也打不进去
+	     （造词框、改译文框都受影响）。 -->
+	<key>LSUIElement</key>
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
