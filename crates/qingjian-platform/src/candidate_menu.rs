@@ -31,10 +31,13 @@ pub enum CandidateAction {
 
     /// 用户词整个删掉，词库词清掉对它的学习记录。
     Delete,
+
+    /// 造词：把这个候选记成用户词，下次打同一段拼音直接从本地出。
+    LearnWord,
 }
 
 impl CandidateAction {
-    const ALL: [Self; 7] = [
+    const ALL: [Self; 8] = [
         Self::EditTranslation,
         Self::RegenerateTranslation,
         Self::Pin,
@@ -42,6 +45,7 @@ impl CandidateAction {
         Self::Demote,
         Self::Undemote,
         Self::Delete,
+        Self::LearnWord,
     ];
 
     pub fn label(self) -> &'static str {
@@ -53,6 +57,7 @@ impl CandidateAction {
             Self::Demote => tr("candidate_menu.demote"),
             Self::Undemote => tr("candidate_menu.undemote"),
             Self::Delete => tr("candidate_menu.delete"),
+            Self::LearnWord => tr("candidate_menu.learn_word"),
         }
     }
 
@@ -98,6 +103,9 @@ pub fn actions(
     }
     if candidate.kind.forgettable() {
         actions.push(CandidateAction::Delete);
+    }
+    if engine.learnable(candidate) {
+        actions.push(CandidateAction::LearnWord);
     }
     actions
 }
@@ -167,6 +175,14 @@ pub fn perform(
             notice(tr_args("candidate_menu.undemoted", &[("text", &text)]))
         }
         CandidateAction::Delete => notice(engine.forget(candidate).describe(text)),
+        CandidateAction::LearnWord => match engine.learn_candidate_word(candidate) {
+            Ok(()) => {
+                // 造完立刻落盘：用户词马上要用，别等壳的定时落盘
+                engine.flush_learning();
+                notice(tr_args("candidate_menu.learned", &[("text", &text)]))
+            }
+            Err(reason) => notice(reason),
+        },
     }
 }
 
@@ -180,6 +196,6 @@ mod tests {
             assert_eq!(CandidateAction::from_id(action.id()), Some(action));
         }
         assert_eq!(CandidateAction::from_id(0), None);
-        assert_eq!(CandidateAction::from_id(8), None);
+        assert_eq!(CandidateAction::from_id(9), None);
     }
 }

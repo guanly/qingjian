@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use qingjian_core::CodeScheme;
-use qingjian_dictionary::{CodeTable, DictionaryError};
+use qingjian_dictionary::{AuxWordRules, CodeTable, DictionaryError};
 
 use super::WUBI86;
 use crate::{CodeRules, SchemeMeta};
@@ -59,6 +59,11 @@ impl CodeSchemeEntry {
         if let Some(length) = self.code_length.filter(|length| *length > 0) {
             scheme.code_length = length;
         }
+        // 造词要给码表里没有的词算编码：86 五笔的词码规则是固定的（两字各前两码、三字各首码、
+        // 四字以上取前三字与末字的首码），内置方案自己带上，不必让 `scheme.toml` 再写一遍。
+        if self.id == WUBI86 {
+            scheme.words = wubi_word_rules();
+        }
         Ok(scheme)
     }
 
@@ -70,4 +75,11 @@ impl CodeSchemeEntry {
             self.id.clone()
         }
     }
+}
+
+/// 86 五笔的词码规则：两字词各取前两码，三字词各取首码，四字及以上取前三字与末字的首码。
+///
+/// 公式里大写选字、小写选码位，两两成对：`AaAb` 是第一个字的头两个码，所以两字词要四对。
+fn wubi_word_rules() -> AuxWordRules {
+    AuxWordRules::parse([(2, "AaAbBaBb"), (3, "AaBaCa"), (4, "AaBaCaZa")]).unwrap_or_default()
 }

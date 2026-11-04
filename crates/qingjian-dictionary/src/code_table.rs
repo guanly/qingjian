@@ -191,6 +191,26 @@ impl CodeTable {
         self.total_frequency
     }
 
+    /// 这个词在码表里的全部编码，按「满码优先、词频降序、行序」排：造词时由汉字反推编码用。
+    ///
+    /// 单字通常只有一条（全码），但重码字与简码会在表里有几条；按满码长度挑第一条，
+    /// 拼词时取到的就是它的全码，而不是一级简码那种一个字母。
+    pub fn codes(&self, text: &str) -> Vec<&str> {
+        let mut found: Vec<&Entry> = self
+            .entries
+            .iter()
+            .filter(|entry| entry.text == text)
+            .collect();
+        found.sort_by(|a, b| {
+            let full = |entry: &Entry| entry.code.len() == self.full_code_len;
+            full(b)
+                .cmp(&full(a))
+                .then_with(|| b.frequency.cmp(&a.frequency))
+                .then_with(|| a.order.cmp(&b.order))
+        });
+        found.into_iter().map(|entry| entry.code.as_str()).collect()
+    }
+
     /// 满码的字母数（最常见的编码长度）；空表为 0。
     pub fn full_code_len(&self) -> usize {
         self.full_code_len

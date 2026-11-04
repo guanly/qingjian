@@ -29,3 +29,12 @@ duplicate = "Mã {code} đã có cụm từ này"
 user_word = "Đã xóa từ của người dùng “{text}”"
 learning = "Đã quên những gì đã học về “{text}”"
 nothing = "“{text}” là từ trong từ điển và không có dữ liệu học, không có gì để xóa"
+
+[words]
+empty = "Cần nhập một từ"
+text = "Từ không được chứa ký tự điều khiển như xuống dòng hay tab"
+syllables = "Âm tiết chỉ được gồm chữ cái thường"
+length = "Số âm tiết phải bằng số chữ"
+invalid = "Cách đọc này không phải pinyin hợp lệ nên chưa được lưu"
+han = "Từ chỉ được gồm chữ Hán"
+unknown = "\"{char}\" không có cách đọc trong từ điển nên chưa lưu được"

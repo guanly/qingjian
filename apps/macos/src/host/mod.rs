@@ -14,6 +14,7 @@ mod dictionaries;
 mod init;
 mod mode;
 mod model;
+mod new_word;
 mod presenting;
 mod session;
 mod settings;

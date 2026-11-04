@@ -29,3 +29,12 @@ duplicate = "輸入碼 {code} 下已經有這條短語"
 user_word = "已刪除用戶詞「{text}」"
 learning = "已忘掉對「{text}」的學習記錄"
 nothing = "「{text}」是詞庫裡的詞，也沒有學習記錄，沒什麼可刪"
+
+[words]
+empty = "造詞要填一個詞"
+text = "詞裡不能有換行、定位字元這類控制字元"
+syllables = "拼音音節只能是小寫英文字母"
+length = "拼音音節數要與字數一致"
+invalid = "這段讀音不像拼音，沒有寫入"
+han = "只能造中文詞"
+unknown = "「{char}」在詞庫裡沒有讀音，造不了詞"

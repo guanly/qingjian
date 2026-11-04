@@ -1,3 +1,5 @@
+use qingjian_dictionary::CodeTable;
+
 use super::*;
 use crate::CustomPhrase;
 
@@ -43,6 +45,38 @@ fn demotion_works_in_private_input() {
     let top = e.query().unwrap().candidates.items[0].clone();
     e.demote(&top);
     assert_eq!(e.demotion(&top), 1);
+}
+
+#[test]
+fn only_words_the_dictionary_lacks_can_be_learned() {
+    let mut e = learning_engine();
+    // 词库里的词不给「存为用户词」
+    e.set_input("kaifa");
+    let items = e.query().unwrap().candidates.items;
+    let develop = items
+        .iter()
+        .find(|candidate| candidate.text == "开发" && candidate.kind == CandidateKind::Chinese)
+        .unwrap();
+    assert!(!e.learnable(develop));
+
+    // 整句候选词库里没有，可以造词（它有读音）
+    e.set_input("xiangkaifa");
+    let items = e.query().unwrap().candidates.items;
+    let sentence = items
+        .iter()
+        .find(|candidate| candidate.kind == CandidateKind::Sentence)
+        .unwrap();
+    assert!(e.learnable(sentence));
+
+    // 形码候选没有读音，造不了词
+    e.set_phonetic(false);
+    e.set_code_scheme(Some(CodeScheme::new(
+        "wubi",
+        CodeTable::parse("甲\tkai\t1000\n").unwrap(),
+    )));
+    e.set_input("kai");
+    let items = e.query().unwrap().candidates.items;
+    assert!(items.iter().all(|candidate| !e.learnable(candidate)));
 }
 
 #[test]

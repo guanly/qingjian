@@ -29,3 +29,12 @@ duplicate = "Unter dem Code {code} gibt es diese Phrase schon"
 user_word = "Benutzerwort „{text}“ gelöscht"
 learning = "Gelerntes zu „{text}“ vergessen"
 nothing = "„{text}“ ist ein Wörterbuchwort ohne Lerndaten; es gibt nichts zu löschen"
+
+[words]
+empty = "Es fehlt das Wort"
+text = "Das Wort darf keine Steuerzeichen wie Zeilenumbrüche oder Tabulatoren enthalten"
+syllables = "Silben dürfen nur aus Kleinbuchstaben bestehen"
+length = "Die Anzahl der Silben muss zur Zeichenzahl passen"
+invalid = "Diese Lesung ist kein gültiges Pinyin und wurde nicht gespeichert"
+han = "Ein Wort darf nur chinesische Zeichen enthalten"
+unknown = "Für \"{char}\" gibt es im Wörterbuch keine Lesung, daher wurde nichts gespeichert"

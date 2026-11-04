@@ -127,6 +127,27 @@ impl Engine {
             .translate(restored.as_deref().unwrap_or(text))
     }
 
+    /// 造得了词的：带读音（形码与自定义短语没有），且词库与用户词里都还没有这个词。
+    /// 词库里已有的词再造一遍没有意义，菜单里就不给这项。
+    pub fn learnable(&self, candidate: &Candidate) -> bool {
+        if self.english_mode || candidate.syllables.is_empty() {
+            return false;
+        }
+        let text = self.stored_text(candidate);
+        let candidate = Candidate {
+            text,
+            ..candidate.clone()
+        };
+        !self.knows_word(&candidate)
+    }
+
+    /// 把这个候选记成用户词（造词）。繁体输出开着时存的是简体，与学习数据里的写法一致。
+    pub fn learn_candidate_word(&mut self, candidate: &Candidate) -> Result<(), String> {
+        let text = self.stored_text(candidate);
+        let syllables = candidate.syllables.clone();
+        self.learn_word_with_reading(&text, &syllables)
+    }
+
     /// 降得了权的：自定义短语按权重排，不走降权。
     pub fn demotable(&self, candidate: &Candidate) -> bool {
         !matches!(candidate.kind, CandidateKind::Custom(_)) && !self.composition.scope().is_empty()

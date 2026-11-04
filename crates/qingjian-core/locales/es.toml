@@ -29,3 +29,12 @@ duplicate = "El código {code} ya tiene esta frase"
 user_word = "Se eliminó la palabra de usuario «{text}»"
 learning = "Se olvidó lo aprendido sobre «{text}»"
 nothing = "«{text}» es una palabra del diccionario sin registros de aprendizaje; no hay nada que eliminar"
+
+[words]
+empty = "Falta la palabra"
+text = "La palabra no puede contener caracteres de control como saltos de línea o tabulaciones"
+syllables = "Las sílabas solo pueden tener letras minúsculas"
+length = "El número de sílabas debe coincidir con el de caracteres"
+invalid = "Esa lectura no es pinyin válido, así que no se guardó"
+han = "La palabra solo puede tener caracteres chinos"
+unknown = "\"{char}\" no tiene lectura en el diccionario, así que no se guardó"

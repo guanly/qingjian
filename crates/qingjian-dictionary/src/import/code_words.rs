@@ -10,7 +10,8 @@ use super::{Imported, rime, strip_extensions};
 use crate::code_table::CodeTable;
 use crate::error::DictionaryError;
 
-const SCHEME_HEADER: &str = "# scheme:";
+/// 形码词库第一行的方案声明（`# scheme: wubi86`）；手放进目录的词库没这行，按 86 五笔算。
+pub const SCHEME_HEADER: &str = "# scheme:";
 
 /// 把 `source` 导入到 `dest_dir`，记成方案 `scheme` 的词；同名的覆盖。
 pub fn import_code_words(

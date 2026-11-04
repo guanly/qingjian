@@ -448,6 +448,42 @@ impl Dictionary {
         })
     }
 
+    /// 一个字的读音（按词频降序）：只在单音节的键里找，多字的键（`nar`、`给我`）跳过。
+    ///
+    /// 造词时用来由汉字反推拼音。同一个字有多个读音的（`重` 是 `zhong` / `chong`），
+    /// 靠前的那个是词库里更常见的，调用方取第一条即可。
+    pub fn readings(&self, text: &str) -> Vec<Match<'_>> {
+        let mut found = Vec::new();
+        for entry in self.index.iter() {
+            // 单音节最长 `zhuang`（6 字节），带声调数字的也不会超过 7；更长的键一定是多音节词
+            if entry.key_len > 8 {
+                continue;
+            }
+            let key = self.key(entry);
+            if key.contains(' ') {
+                continue;
+            }
+            let first = entry.first_slot as usize;
+            for position in first..first + entry.slot_count as usize {
+                let slot = &self.slots[position];
+                if self.text(slot) != text {
+                    continue;
+                }
+                found.push(Match {
+                    text: self.text(slot),
+                    pinyin: key,
+                    frequency: slot.frequency,
+                    reading_total: self.reading_total(key, self.text(slot)),
+                    tones: self.tones(position, slot),
+                    secondary: self.secondary,
+                    exact: true,
+                });
+            }
+        }
+        found.sort_by_key(|matched| std::cmp::Reverse(matched.frequency));
+        found
+    }
+
     /// 只查音节数与模式长度**恰好相等**的词：整句转换的词图每个格子只要正好覆盖这几个音节的词，
     /// 输入前缀出候选也只要这种。与 [`Self::lookup_pattern`] 同一套收窄，只是最后一级不收更长的词、
     /// 简拼位置只看每个音节块的第一条键，代价与匹配到的音节组合数成正比。

@@ -3,7 +3,7 @@
 use super::diagnostics::{copy_to_pasteboard, open_with_system};
 use super::*;
 use crate::preferences::DEFAULT_FONT_LABEL;
-use qingjian_core::TraditionalVariant;
+use qingjian_core::{LearnedWord, TraditionalVariant};
 use qingjian_platform::{FontSize, ShiftLetter, SwitchKey, code_schemes};
 
 impl Host {
@@ -90,8 +90,53 @@ impl Host {
                 }
             }
             MenuAction::OpenDownload => open_with_system(&[qingjian_update::DOWNLOAD_URL]),
+            MenuAction::NewWord => self.new_word(),
             // 要当前会话的文本客户端，控制器在 menuAction: 里先接走了
             MenuAction::OpenSymbolPanel => {}
+        }
+    }
+
+    /// 造词：弹框收一个中文词，读音与形码编码由引擎算好，存完立刻落盘——用户马上要用。
+    fn new_word(&mut self) {
+        let Some(text) = new_word::ask(&self.engine) else {
+            return;
+        };
+        match self.engine.learn_user_word(&text) {
+            Ok(learned) => {
+                self.engine.flush_learning();
+                // 形码方案下再写一条形码用户词：拼音侧与五笔侧都能打出这个词
+                self.save_code_word(&learned);
+                // 造词框关掉后不弹别的框，借模式提示回一句：用户得知道存上了没有
+                self.osd.show(&format!("已造词 {}", learned.text));
+                tracing::info!(
+                    text = %learned.text,
+                    reading = ?learned.reading,
+                    code = ?learned.code,
+                    "造词写入用户词"
+                );
+            }
+            Err(reason) => {
+                tracing::warn!(%reason, "造词失败");
+                new_word::report(&reason);
+            }
+        }
+    }
+
+    /// 把造出来的编码写进用户形码词库（`code_dicts/user-words.tsv`）；壳每秒比对目录，
+    /// 文件一变方案就重载，不用重启。拼音输入、或方案没有词码规则时没有编码，跳过。
+    fn save_code_word(&self, learned: &LearnedWord) {
+        let Some(code) = &learned.code else {
+            return;
+        };
+        let Some(scheme) = self.settings.config().general.code() else {
+            return;
+        };
+        let Some(dir) = paths::user_data_dir() else {
+            return;
+        };
+        match code_schemes::save_user_word(&dir, &scheme, &learned.text, code) {
+            Ok(path) => tracing::info!(path = %path.display(), code, "造词写入形码词库"),
+            Err(error) => tracing::warn!(%error, "形码用户词写不进，五笔侧暂时打不出这个词"),
         }
     }
 

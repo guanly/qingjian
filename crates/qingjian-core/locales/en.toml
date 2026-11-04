@@ -29,3 +29,12 @@ duplicate = "The code {code} already has this phrase"
 user_word = "Deleted the user word “{text}”"
 learning = "Forgot what was learned about “{text}”"
 nothing = "“{text}” is a dictionary word with no learning records; there's nothing to delete"
+
+[words]
+empty = "A word is required"
+text = "The word can't contain control characters such as newlines or tabs"
+syllables = "Syllables must be lowercase letters"
+length = "The number of syllables must match the number of characters"
+invalid = "That reading isn't valid pinyin, so nothing was saved"
+han = "A word can only contain Chinese characters"
+unknown = "\"{char}\" has no reading in the dictionary, so the word wasn't saved"

@@ -2,7 +2,7 @@
 //!
 //! 规则只在只用形码时生效：混输下码长以外的字母还要留给拼音，满码时多敲一个键不能当成顶字。
 
-use qingjian_dictionary::CodeTable;
+use qingjian_dictionary::{AuxWordRules, CodeTable};
 
 /// 一套形码方案。内置的 86 五笔与用户自己导入的方案都是它，区别只在码表与开关。
 #[derive(Debug, Clone)]
@@ -20,6 +20,9 @@ pub struct CodeScheme {
 
     /// 编码已经满码长时再敲一个字母：先把高亮的候选上屏，这个字母起新的一段编码。
     pub top: bool,
+
+    /// 词码规则：码表里没有的词按它从单字拼（造词时给新词算编码）。空就是不拼，只认码表里有的词。
+    pub words: AuxWordRules,
 }
 
 impl CodeScheme {
@@ -31,6 +34,20 @@ impl CodeScheme {
             table,
             auto_commit: false,
             top: false,
+            words: AuxWordRules::default(),
         }
+    }
+
+    /// 这个词的编码：码表里有的用码表里的，没有就按词码规则从单字拼。拼不出为 `None`。
+    ///
+    /// 造词写形码用户词库时用它——用户只填中文，码由这里算。
+    pub fn code_for(&self, text: &str) -> Option<String> {
+        if let Some(code) = self.table.codes(text).first() {
+            return Some((*code).to_owned());
+        }
+        self.words
+            .derive(text, |single| self.table.codes(single))
+            .into_iter()
+            .next()
     }
 }

@@ -1,5 +1,7 @@
 //! 学习、撤销、统计、日志、释义与词汇。
 
+use qingjian_dictionary::{AuxWordRules, CodeTable};
+
 use super::*;
 
 #[test]
@@ -721,4 +723,47 @@ fn input_log_records_the_session_and_page_turns() {
         panic!("expected a commit");
     };
     assert_eq!(commit.pages, 2);
+}
+
+#[test]
+fn a_word_learned_by_hand_becomes_a_user_word() {
+    let shared = Arc::new(Mutex::new((Vec::new(), sentence::UserNgram::default())));
+    let learner = WordLearner {
+        shared: Arc::clone(&shared),
+        ..WordLearner::default()
+    };
+    let mut engine = engine().with_learner(Box::new(learner));
+
+    // 造词只给中文：读音从词库里逐字查出来
+    let learned = engine.learn_user_word("开先").unwrap();
+    assert_eq!(learned.text, "开先");
+    assert_eq!(learned.reading, ["kai", "xian"]);
+    assert_eq!(learned.code, None, "拼音输入没有形码");
+    assert_eq!(shared.lock().unwrap().0, ["开先"]);
+    // 下次打这段拼音直接从本地出
+    engine.set_input("kaixian");
+    assert!(texts_of(&engine).iter().any(|text| text == "开先"));
+
+    // 空词、非汉字、词库里查不到读音的字都拒，而且不写进用户词
+    assert!(engine.learn_user_word("  ").is_err());
+    assert!(engine.learn_user_word("abc").is_err());
+    assert!(engine.learn_user_word("开a").is_err());
+    assert!(engine.learn_user_word("账").is_err(), "词库里没有这个字");
+    assert_eq!(shared.lock().unwrap().0, ["开先"], "出错的不写入");
+}
+
+#[test]
+fn a_learned_word_gets_a_code_from_the_scheme() {
+    let mut engine = engine();
+    let mut scheme = CodeScheme::new(
+        "wubi",
+        CodeTable::parse("开\tga\t1000\n先\ttfqb\t1000\n").unwrap(),
+    );
+    // 两字词：各取前两码（86 五笔的词码规则，`AaAb` 是一个字的头两码）
+    scheme.words = AuxWordRules::parse([(2, "AaAbBaBb")]).unwrap();
+    engine.set_code_scheme(Some(scheme));
+
+    let learned = engine.learn_user_word("开先").unwrap();
+    assert_eq!(learned.reading, ["kai", "xian"]);
+    assert_eq!(learned.code.as_deref(), Some("gatf"));
 }

@@ -735,4 +735,31 @@ impl Engine {
     pub fn learning_language(&self) -> Language {
         self.translator.language()
     }
+
+    /// 最近几次上屏（从旧到新）：`(上屏的文本, 当时消耗的输入串)`，上屏后整个退格删掉的不算。
+    /// 造词框拿它预填「刚打的词」。
+    pub fn recent_commits(&self, limit: usize) -> Vec<(String, String)> {
+        let mut commits: Vec<_> = self
+            .recent_commits
+            .iter()
+            .rev()
+            .take(limit)
+            .filter(|commit| !commit.is_erased())
+            .map(|commit| (commit.text.clone(), commit.input.clone()))
+            .collect();
+        commits.reverse();
+        commits
+    }
+
+    /// 把一段连写拼音切成音节（造词框预填拼音用）：切不开、或有没打完的音节时给 `None`。
+    pub fn split_syllables(&self, input: &str) -> Option<Vec<String>> {
+        let segmentation = crate::parser::segment(input).ok()?.into_iter().next()?;
+        (segmentation.incomplete_count() == 0).then(|| {
+            segmentation
+                .syllables
+                .into_iter()
+                .map(|syllable| syllable.text)
+                .collect()
+        })
+    }
 }

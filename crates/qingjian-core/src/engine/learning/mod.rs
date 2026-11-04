@@ -7,6 +7,7 @@ use super::input_log::{CommitEntry, InputLogEntry, InputLogger, InputSource, LOG
 use super::statistics::Usage;
 use super::vocabulary::{Encounter, FRESH_UNTIL, VocabularySummary};
 use crate::candidate::{Candidate, CandidateKind, Language, Translation};
+use crate::i18n::{tr, tr_args};
 use crate::sentence;
 
 mod forgotten;
@@ -16,6 +17,19 @@ mod muted;
 pub use forgotten::Forgotten;
 pub use learner::{Learner, NoLearner};
 pub(super) use muted::MutedLearner;
+
+/// 造词的结果：引擎从词库推出来的读音与编码，壳拿它给用户回话、写形码词库。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LearnedWord {
+    /// 存进用户词库的词（已去掉首尾空白）。
+    pub text: String,
+
+    /// 逐字查出来的读音，与词的字数一一对应。
+    pub reading: Vec<String>,
+
+    /// 当前形码方案下这个词的编码；拼音输入、或方案没有词码规则时为 `None`。
+    pub code: Option<String>,
+}
 
 impl Engine {
     /// 取回释义兜底写好的释义，记进译者（个人释义表）；返回学了几条。壳定时调，不阻塞。
@@ -278,6 +292,94 @@ impl Engine {
             tracing::debug!(text = %candidate.text, ?forgotten, "删除候选");
         }
         forgotten
+    }
+
+    /// 造词：只给词，读音由词库反查、形码编码由当前方案算。
+    ///
+    /// 用户只需要输入中文——每个字的读音取词库里它最常用的那个（`重` 是 `zhong`），
+    /// 有读音才能写进用户词库、下次打同一段拼音出来。当前若是形码方案，再顺带算一份编码，
+    /// 壳拿它写形码用户词库，五笔也能打出这个词。
+    pub fn learn_user_word(&mut self, text: &str) -> Result<LearnedWord, String> {
+        let text = text.trim().to_owned();
+        let reading = self.derive_reading(&text)?;
+        self.learn_word_with_reading(&text, &reading)?;
+        let code = self.code_scheme().and_then(|scheme| scheme.code_for(&text));
+        Ok(LearnedWord {
+            text,
+            reading,
+            code,
+        })
+    }
+
+    /// 一个词的读音：逐字取词库里它最常用的读音。库里查不到的字按错误返回——
+    /// 没有读音就造不出能用的词，与其写进去不如说清楚是哪个字。
+    fn derive_reading(&self, text: &str) -> Result<Vec<String>, String> {
+        if text.is_empty() {
+            return Err(tr("words.empty").to_owned());
+        }
+        if text.chars().any(char::is_control) {
+            return Err(tr("words.text").to_owned());
+        }
+        // 非汉字（英文、数字、标点）没有拼音，整条都进不了按音节排的用户词库
+        if !text.chars().all(sentence::is_han) {
+            return Err(tr("words.han").to_owned());
+        }
+        let mut reading = Vec::with_capacity(text.chars().count());
+        for ch in text.chars() {
+            let single = ch.to_string();
+            let found = self
+                .all_dictionaries()
+                .into_iter()
+                .find_map(|dictionary| dictionary.readings(&single).first().cloned())
+                .and_then(|matched| matched.syllables().next().map(str::to_owned));
+            match found {
+                Some(syllable) => reading.push(syllable),
+                None => {
+                    return Err(tr_args("words.unknown", &[("char", &single)]));
+                }
+            }
+        }
+        Ok(reading)
+    }
+
+    /// 用户明确把「这段文字 + 这段读音」记成用户词（造词）：下次打同一段拼音直接从本地出，也进整句。
+    ///
+    /// 判据与自动造词一致（字数等于音节数、音节全是小写字母）；另外先按词库格式预演一遍——
+    /// 一条写不对的读音会让整份用户词库重建失败，所有用户词一起失效。
+    /// 私密输入与关掉学习时照做：造词是用户明确要求的管理操作，不算「这段输入的学习」。
+    pub fn learn_word_with_reading(
+        &mut self,
+        text: &str,
+        syllables: &[String],
+    ) -> Result<(), String> {
+        let text = text.trim();
+        if text.is_empty() {
+            return Err(tr("words.empty").to_owned());
+        }
+        if text.chars().any(char::is_control) {
+            return Err(tr("words.text").to_owned());
+        }
+        if syllables.is_empty()
+            || syllables.iter().any(|syllable| {
+                syllable.is_empty() || !syllable.bytes().all(|b| b.is_ascii_lowercase())
+            })
+        {
+            return Err(tr("words.syllables").to_owned());
+        }
+        if text.chars().count() != syllables.len() {
+            return Err(tr("words.length").to_owned());
+        }
+        // 与 `user-words.tsv` 同一格式：词 \t 音节 \t 词频
+        let line = format!("{text}\t{}\t100\n", syllables.join(" "));
+        if qingjian_dictionary::Dictionary::parse(&line).is_err() {
+            return Err(tr("words.invalid").to_owned());
+        }
+        self.learner.inner_mut().learn_word(text, syllables);
+        // 用户词进了词库，整句格子候选全部作废
+        self.forget_span_cache();
+        *self.correction_cache.borrow_mut() = None;
+        tracing::debug!(text, ?syllables, "造词");
+        Ok(())
     }
 
     /// 把学习数据与输入日志落盘。壳在停用输入法时调，激活期间也可以定时调（进程被杀时少丢）：

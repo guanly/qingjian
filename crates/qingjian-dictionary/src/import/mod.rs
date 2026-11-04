@@ -19,7 +19,7 @@ use qingjian_format::{Container, Metadata};
 use crate::dictionary::Dictionary;
 use crate::error::DictionaryError;
 
-pub use code_words::{code_words_scheme, import_code_words};
+pub use code_words::{SCHEME_HEADER, code_words_scheme, import_code_words};
 pub use format::is_code_table;
 pub use imported::Imported;
 // `dict-convert wubi` 也读 Rime `.dict.yaml`（形码码表的第二列是编码，转换方式一样），共用这一个解析器

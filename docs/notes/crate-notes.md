@@ -75,7 +75,7 @@ mac 存在 `Session::spelling`（`Host::follow_highlight`）、Windows / Linux �
 在 `query_inner` 进切分之前按这两个分派——只有拼音 / 只有形码（`query_code`）/ **两边都开（`query_mixed`，混输）**。
 编码按前缀查表，`CandidateKind::Code` 的候选 `syllables` 为空、上屏吃掉整段作用域（`whole_scope`）。
 混输是「拼音那条 Query 前面插上形码候选」：拼音读不出来时（`ggll`）整个按形码走，两边都空才算错；
-按文本去重，编码打全的形码词在前、拼音居中、只命中前缀的形码词垫后（一律形码在前的话 `kai` 的首选会变成编码 `kaik` 的词）；混输下模式键同双拼换成大写，满码长度（`CodeScheme::code_length`，缺省取 `CodeTable::full_code_len` 即最常见的编码长度，五笔是 4；极点码表里有条写错的 5 码 `TF卡 ttfhh`，取最长会把满码拖成 5）以内不做拼写纠错，超出码长自然只剩拼音。
+按文本去重，编码打全的形码词在前、随后是只命中前缀的形码词（最多 `MIXED_CODE_PREFIX_LEAD` 即 6 条）、拼音居中、剩下的前缀命中垫后（全放前面的话 `wo` 能带出三十多条 `woxx` 的生僻词，拼音候选被挤到几十位之后）；混输下模式键同双拼换成大写，满码长度（`CodeScheme::code_length`，缺省取 `CodeTable::full_code_len` 即最常见的编码长度，五笔是 4；极点码表里有条写错的 5 码 `TF卡 ttfhh`，取最长会把满码拖成 5）以内不做拼写纠错，超出码长自然只剩拼音。
 只用形码时还有两条按键规则（`engine/code_keys.rs`，混输下都不生效）：`code_tops(c)` 判断满码再敲字母要不要先顶字，由壳上屏**高亮**候选再收这个字母；
 `commit_unique_code()` 在壳每收一个字母后调，全码满码且码表里只有一个词时 Core 自己按首选上屏（走完整 `query` 拿出 Core 的那份候选，繁体输出照样对）。
 `composing_code()` 告诉壳「单用形码、缓冲区是一段编码」：壳据此让会转全角的标点总是先上屏高亮候选（不看 `punct_commits`），
@@ -151,6 +151,15 @@ mac 存在 `Session::spelling`（`Host::follow_highlight`）、Windows / Linux �
   个人敲错表（`user-typos.tsv`，接受过的 (敲的, 要的) 音节对，词图敲错边与整段纠错的代价按它打折）与个人 n-gram（`user-ngram.tsv`，Core `sentence::UserNgram`，
   二元 + 三元在线计数，整句转换与词级排序里与静态模型插值；Tab 接受的云端整句按 `sentence::segment_text` 切词后也记；
   连着选出的两个词记够次数自动造词进用户词，一段拼音分几次选完的合成词记两次也造）。
+  **手动造词**走 `Engine::learn_user_word`（`engine/learning/mod.rs`），只收中文：`derive_reading` 用 `Dictionary::readings` 逐字反查读音
+  （单音节键里找、取词频最高的那条；查不到或含非汉字直接报错，一个没有读音的词写进去也用不了），再走 `learn_word_with_reading`
+  ——字数等于音节数、音节全小写、先按词库格式 `Dictionary::parse` 预演一遍（一条坏读音会让整份用户词库重建失败，全部用户词一起失效），
+  成功后作废整句格子缓存；私密输入与关学习时照做（用户明确要求的管理操作）。返回 `LearnedWord { reading, code }`：
+  形码方案下 `CodeScheme::code_for` 用码表反查（`CodeTable::codes`，满码优先）或按词码规则（`AuxWordRules::derive`）拼出编码，
+  86 五笔规则内置在 `CodeSchemeEntry::load`（两字各前两码、三字各首码、四字以上取前三字与末字首码）。
+  入口两个：候选右键「存为用户词」（`candidate_menu::CandidateAction::LearnWord`，只在词库没有该词、且候选带读音时出现，读音直接取候选的）与
+  macOS 菜单「造词…」（`apps/macos/src/host/new_word.rs`，单输入框、用 `Engine::recent_commits` 预填刚上屏的词；
+  造出来的编码由 `code_schemes::save_user_word` 写进 `code_dicts/user-words.tsv`，壳每秒比对目录，写盘即重载）。
   候选右键菜单的降权记在 `user-demoted.tsv`（`frequency_learner/demotions.rs`，输入串 → 词 → 降了几次，封顶 99，不衰减），私密输入与关学习时照记。
   词频、个人英文词与敲错表三张表带**时间衰减**（`frequency_learner/decay.rs`，牛顿冷却）：最近使用日记在
   `user-days.tsv` 等 `*-days.tsv` 侧车文件里（主表保持旧格式两列 / 三列，旧版本读到新文件不丢数据；侧车丢了整份退回文件修改日），
@@ -511,6 +520,8 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   翻页键（`[general] page_keys`）走 `Session::page_target` / `can_turn_page`：选 `-=` 时 `-` / `=` **没有上一页 / 下一页就落回原语义**（英文直输段），别的翻页键翻不动照旧吃键（`imk/controller/display.rs::page_key`）。Windows / Linux 还是老行为，尚未同步。
   输入方案（`[general] scheme` 与 `code`）也在这里装配，交给 `Host::scheme_slot`（`qingjian_platform::SchemeSlot`，随包方案目录是 `paths::bundled_schemes_dir()`）；
   找不到或码表坏了只警告并按拼音跑。顶字与满码自动上屏接在 `imk/controller/text.rs` 收字母那里。
+  「造词…」的菜单项在 `menubar/menu.rs`（可点条目只能放在 `OpenLogs` 之前那一组，放到下面两个纯展示条目之间会让 IMK 每次按键后停用菜单、打不了字），
+  动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身在 `host/new_word.rs`（NSAlert + 两个 NSTextField，与候选译文修改框同一套做法）。
 - `apps/macos/scripts/bundle.sh --install` 打包安装到 `~/Library/Input Methods/`（开发用），`--pkg` 做分发用的 pkg（装 `/Library/Input Methods/`，postinstall 跑 `qingjian-macos --register`
   注册、启用并切成当前输入源；签名 / 公证靠 `QINGJIAN_SIGN_IDENTITY` / `QINGJIAN_INSTALLER_IDENTITY` / `QINGJIAN_NOTARY_PROFILE`，没设就 ad-hoc；`QINGJIAN_TARGET` 指定架构，
   成品 `target/pkg/qingjian-<版本>-macos-<arm64|x86_64>.pkg`）；`scripts/uninstall.sh` 卸载。

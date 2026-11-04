@@ -68,6 +68,12 @@ impl InputMenu {
         ));
         menu.addItem(&action_item(
             mtm,
+            "造词…",
+            Some(MenuAction::NewWord),
+            &target,
+        ));
+        menu.addItem(&action_item(
+            mtm,
             "设置…",
             Some(MenuAction::OpenSettings),
             &target,

@@ -227,3 +227,29 @@ fn imported_code_words_join_their_own_scheme() {
     slot.apply(&mut engine, &config, Some(&user), Some(&bundled));
     assert_eq!(engine.code_table().unwrap().len(), 1);
 }
+
+#[test]
+fn a_hand_made_code_word_lands_in_the_user_words_file() {
+    let root = scratch("save-user-word");
+    let path = save_user_word(&root, "wubi86", "拉混", "ruji").unwrap();
+    assert_eq!(path, user_words_dir(&root).join(USER_WORDS_FILE));
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        "# scheme: wubi86\n拉混\truji\t100\n"
+    );
+
+    // 同一个词再造就换掉，不重复；别的词留着
+    save_user_word(&root, "wubi86", "青简", "getu").unwrap();
+    save_user_word(&root, "wubi86", "拉混", "ruji2").unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(
+        text,
+        "# scheme: wubi86\n青简\tgetu\t100\n拉混\truji2\t100\n"
+    );
+
+    // 换了方案：旧词是别的方案的编码，整份重建
+    save_user_word(&root, "wubi98", "青简", "getu98").unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(text, "# scheme: wubi98\n青简\tgetu98\t100\n");
+    assert_eq!(code_words_scheme(&path).as_deref(), Some("wubi98"));
+}

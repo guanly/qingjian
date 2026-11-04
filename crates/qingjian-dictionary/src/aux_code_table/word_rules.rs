@@ -99,11 +99,7 @@ impl WordRules {
 
     /// 由各字的码拼出 `word` 的码，按各字码的先后组合，最多 [`MAX_DERIVED`] 条。
     /// 没有适用的公式、有字没有码时为空。
-    pub(super) fn derive<'a>(
-        &self,
-        word: &str,
-        codes_of: impl Fn(&str) -> Vec<&'a str>,
-    ) -> Vec<String> {
+    pub fn derive<'a>(&self, word: &str, codes_of: impl Fn(&str) -> Vec<&'a str>) -> Vec<String> {
         let chars: Vec<&str> = word
             .char_indices()
             .map(|(start, c)| &word[start..start + c.len_utf8()])

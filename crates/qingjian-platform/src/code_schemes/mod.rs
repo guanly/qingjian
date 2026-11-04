@@ -12,7 +12,7 @@ mod entry;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use qingjian_dictionary::import::code_words_scheme;
+use qingjian_dictionary::import::{SCHEME_HEADER, code_words_scheme};
 
 use self::descriptor::Descriptor;
 pub use self::entry::CodeSchemeEntry;
@@ -146,6 +146,54 @@ pub fn user_schemes_dir(user_dir: &Path) -> PathBuf {
 /// 导入的形码词库的目录：`<用户数据目录>/code_dicts`，不负责创建。
 pub fn user_words_dir(user_dir: &Path) -> PathBuf {
     user_dir.join(WORDS_DIR)
+}
+
+/// 自造形码词落在哪本词库：`code_dicts/user-words.tsv`。与导入的词库同一套格式与热加载。
+pub const USER_WORDS_FILE: &str = "user-words.tsv";
+
+/// 把一条自造的形码词写进用户形码词库，返回文件路径。
+///
+/// 同一个词写过就换成新的编码（改正读音、换方案后重造都要生效）；文件头记方案 id，
+/// 换了方案时旧词不再合并——编码对不上，留着只会串码。
+/// 目录不存在会建，写文件失败由调用方决定要不要提示。
+pub fn save_user_word(
+    user_dir: &Path,
+    scheme: &str,
+    text: &str,
+    code: &str,
+) -> std::io::Result<PathBuf> {
+    let dir = user_words_dir(user_dir);
+    std::fs::create_dir_all(&dir)?;
+    let path = dir.join(USER_WORDS_FILE);
+    let existing = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut kept: Vec<&str> = Vec::new();
+    let mut same_scheme = false;
+    for line in existing.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix(SCHEME_HEADER) {
+            same_scheme = rest.trim() == scheme;
+            continue;
+        }
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if trimmed.split('\t').next() == Some(text) {
+            continue;
+        }
+        kept.push(trimmed);
+    }
+    // 文件里是别的方案的词：整份不要了，按当前方案重建
+    if !same_scheme {
+        kept.clear();
+    }
+    let mut out = format!("{SCHEME_HEADER} {scheme}\n");
+    for line in kept {
+        out.push_str(line);
+        out.push('\n');
+    }
+    out.push_str(&format!("{text}\t{code}\t100\n"));
+    std::fs::write(&path, out)?;
+    Ok(path)
 }
 
 /// 一个 `schemes` 目录下的方案，按 id 排。不能用的跳过并记日志：一套方案坏了不能拖垮别的。
