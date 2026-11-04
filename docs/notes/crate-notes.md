@@ -521,7 +521,16 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   输入方案（`[general] scheme` 与 `code`）也在这里装配，交给 `Host::scheme_slot`（`qingjian_platform::SchemeSlot`，随包方案目录是 `paths::bundled_schemes_dir()`）；
   找不到或码表坏了只警告并按拼音跑。顶字与满码自动上屏接在 `imk/controller/text.rs` 收字母那里。
   「造词…」的菜单项在 `menubar/menu.rs`（可点条目只能放在 `OpenLogs` 之前那一组，放到下面两个纯展示条目之间会让 IMK 每次按键后停用菜单、打不了字），
-  动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身在 `host/new_word.rs`（NSAlert + 两个 NSTextField，与候选译文修改框同一套做法）。
+  动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身在 `host/new_word.rs`。
+  **输入法进程里不能 `runModal`**（2026-11-04，连着踩两次）：模态框把主线程关进模态 run loop，IMK 的按键派发跟着停摆，
+  框里一个字符也收不到，**别的应用也一起打不了字**；切到别的输入法又能打，因为按键不再路由给青简。
+  往主队列后排（`host::defer`）解决不了这个，只是把开框挪出 `Host` 的借用。
+  所以小对话框统一走 `src/dialog.rs` 的**非模态**窗口（`dialog::prompt` / `dialog::notice`，结果走回调，
+  按钮 target 兼窗口 delegate，⌘V 等快捷键靠 `preferences::edit_menu::install`），
+  「导入词库」的 NSOpenPanel 同样改成 `beginWithCompletionHandler:` 异步回调。
+  开框仍要 `host::defer`：窗口一激活本进程，IMK 就给它建输入会话并调 `activateServer`，那次也要 `host::with`，
+  撞在借用上这个会话就没初始化（日志里能看 `app.qingjian.inputmethod` 的 `activateServer` 紧跟「Host 正在被借用」）。
+  框里走的是青简自己：拼音 / 五笔组句、候选窗照常出，确定时先 `makeFirstResponder(nil)` 结束编辑再读值。
 - `apps/macos/scripts/bundle.sh --install` 打包安装到 `~/Library/Input Methods/`（开发用），`--pkg` 做分发用的 pkg（装 `/Library/Input Methods/`，postinstall 跑 `qingjian-macos --register`
   注册、启用并切成当前输入源；签名 / 公证靠 `QINGJIAN_SIGN_IDENTITY` / `QINGJIAN_INSTALLER_IDENTITY` / `QINGJIAN_NOTARY_PROFILE`，没设就 ad-hoc；`QINGJIAN_TARGET` 指定架构，
   成品 `target/pkg/qingjian-<版本>-macos-<arm64|x86_64>.pkg`）；`scripts/uninstall.sh` 卸载。

@@ -299,3 +299,25 @@ pub fn with<R>(f: impl FnOnce(&mut Host) -> R) -> Option<R> {
         }
     })
 }
+
+/// 把一件事排到主队列，等当前这次回调退栈、[`with`] 的借用放开之后再跑。
+///
+/// 开窗口（造词、改译文、报错）要走这里：窗口一激活本进程，IMK 就会给这个窗口建输入会话并调 `activateServer`，
+/// 那一次也要 [`with`]；借用还握着就被跳过，这个会话的初始化（当前应用、进入输入框）就全没做。
+/// 主队列的 block 在回调退栈后执行，那时借用已经释放。
+///
+/// 注意窗口本身必须**非模态**（见 `crate::dialog`）：模态 run loop 会把 IMK 的按键派发整个卡住，
+/// 那是另一回事，光靠往后排解决不了。
+pub fn defer(work: impl FnOnce() + 'static) {
+    // block 可能被调用不止一次（`Fn` 约束），里面用 `take` 保证那段活只干一次；主队列只在主线程上跑，借用不会打架。
+    let work = std::cell::RefCell::new(Some(work));
+    let block: block2::RcBlock<dyn Fn()> = block2::RcBlock::new(move || {
+        if let Some(work) = work.borrow_mut().take() {
+            work();
+        }
+    });
+    // SAFETY: 主队列持有 block 并负责执行；`RcBlock` 本身 +1 retain，栈上这份退出后 block 依然有效。
+    unsafe {
+        objc2_foundation::NSOperationQueue::mainQueue().addOperationWithBlock(&block);
+    }
+}

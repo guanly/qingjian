@@ -7,6 +7,7 @@
 
 mod app;
 mod candidates;
+mod dialog;
 mod error;
 mod host;
 mod imk;

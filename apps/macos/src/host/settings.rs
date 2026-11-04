@@ -97,11 +97,28 @@ impl Host {
     }
 
     /// 造词：弹框收一个中文词，读音与形码编码由引擎算好，存完立刻落盘——用户马上要用。
+    ///
+    /// 框是非模态的（`crate::dialog`），但开框会把本进程激活成前台应用，IMK 随即给这个窗口建输入会话，
+    /// 那次 `activateServer` 不能撞在 `Host` 的借用上，所以开框这一步排到主队列，存的时候再借回来。
     fn new_word(&mut self) {
-        let Some(text) = new_word::ask(&self.engine) else {
-            return;
-        };
-        match self.engine.learn_user_word(&text) {
+        let prefill = self
+            .engine
+            .recent_commits(1)
+            .first()
+            .map(|(text, _)| text.clone())
+            .unwrap_or_default();
+        defer(move || {
+            new_word::ask(&prefill, |text| {
+                if let Some(text) = text {
+                    with(|host| host.learn_new_word(&text));
+                }
+            });
+        });
+    }
+
+    /// 造词真正落地的部分：算读音与编码、写用户词、写形码用户词、回一句提示。
+    fn learn_new_word(&mut self, text: &str) {
+        match self.engine.learn_user_word(text) {
             Ok(learned) => {
                 self.engine.flush_learning();
                 // 形码方案下再写一条形码用户词：拼音侧与五笔侧都能打出这个词
@@ -117,7 +134,8 @@ impl Host {
             }
             Err(reason) => {
                 tracing::warn!(%reason, "造词失败");
-                new_word::report(&reason);
+                // 报错框同样是模态的，借出去就得等它关掉，一样排到主队列
+                defer(move || new_word::report(&reason));
             }
         }
     }
@@ -405,9 +423,11 @@ impl Host {
                 return;
             }
             (Setting::ImportDictionary, _) => {
-                if let Some(path) = crate::preferences::choose_dictionary_file() {
-                    self.import_dictionary(&path);
-                }
+                crate::preferences::choose_dictionary_file(|path| {
+                    if let Some(path) = path {
+                        with(|host| host.import_dictionary(&path));
+                    }
+                });
                 return;
             }
             (Setting::Fuzzy(index), SettingValue::Bool(on)) => {

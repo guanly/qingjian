@@ -165,13 +165,20 @@ impl QingjianInputController {
             let Some((word, display, current, language)) = target else {
                 return;
             };
-            let Some(text) = super::candidate_editor::edit_translation(&current, &language) else {
-                return;
-            };
-            let message = host::with(|h| h.set_candidate_translation(&word, &display, &text));
-            if let Some(message) = message {
-                host::with(|h| h.status = Some(message));
-            }
+            // 框是非模态的（`crate::dialog`），但开框会激活本进程、IMK 随即给这个窗口建输入会话，
+            // 那次 activateServer 不能撞在 Host 的借用上，所以开框排到主队列，存的时候再借回来。
+            host::defer(move || {
+                super::candidate_editor::edit_translation(&current, &language, move |text| {
+                    let Some(text) = text else {
+                        return;
+                    };
+                    let message =
+                        host::with(|h| h.set_candidate_translation(&word, &display, &text));
+                    if let Some(message) = message {
+                        host::with(|h| h.status = Some(message));
+                    }
+                });
+            });
             return;
         }
         if action == CandidateAction::RegenerateTranslation {

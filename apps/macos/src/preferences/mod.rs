@@ -9,7 +9,7 @@
 //! 后台应用没有主菜单，所以开窗前装一份只有编辑项的主菜单（`edit_menu`）。
 
 mod controls;
-mod edit_menu;
+pub(crate) mod edit_menu;
 mod file_dialog;
 mod font_picker;
 mod key_recorder;
