@@ -1,3 +1,5 @@
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::ops::Range;
 use std::path::Path;
 
@@ -518,6 +520,62 @@ impl Dictionary {
         self.lookup_positions(&positions, false)
     }
 
+    /// 单字母简拼的快路径：以 `letter` 开头的音节里词频最高的一批命中，条数正好 `limit`。
+    ///
+    /// 集合与 [`Self::lookup_pattern`] 的「前缀、且是最后一个位置」那条路相同，只是按词频**逐条**取前
+    /// `limit` 条：单字母一键能命中几万条词目，而排序用得到的最多也就前一两千条；每条命中都要算多音字的
+    /// 读音总和、算声调、切文本，几万次就是几毫秒——首键是每次输入都要过的路。
+    ///
+    /// 挑的时候把小顶堆停在 `limit` 条，只对留下来的那些构造 [`Match`]（代价就只在 `limit` 次上）。
+    /// 排序靠「单音节键优先」：词级排序的预选里「精确」（读音正好是敲的那一个音节的词，`a`、`ai`、`an` 都算）
+    /// 在词频之前，丢了它们首选就会变。平手时留谁不影响——预选本身也不保证平手的顺序。
+    pub fn lookup_initial_top(&self, letter: &str, limit: usize) -> Vec<Match<'_>> {
+        let mut out = Vec::new();
+        if letter.is_empty() || limit == 0 {
+            return out;
+        }
+        let prefix = canonical_syllable(letter);
+        let sub = self.prefix_range(prefix, 0..self.index.len());
+        if sub.is_empty() {
+            return out;
+        }
+        // 堆顶是「最该丢」的那条：不精确的、词频低的
+        let mut heap: BinaryHeap<Reverse<(bool, u32, u32, u32)>> =
+            BinaryHeap::with_capacity(limit + 1);
+        for index in sub {
+            let entry = &self.index[index];
+            // 与 `narrow` 里那条前缀分支同一个判法：键里余下部分不含空格就是单音节键，即这个词的读音
+            // 正好是敲的那个字母（`a`、`ai`、`an` 都是，`a yi` 不是）。单音节键在排序的预选里排最前
+            let exact = !self.key(entry)[prefix.len()..].contains(' ');
+            let first = entry.first_slot as usize;
+            for offset in 0..entry.slot_count as usize {
+                let hit = (
+                    exact,
+                    self.slots[first + offset].frequency,
+                    index as u32,
+                    offset as u32,
+                );
+                if heap.len() < limit {
+                    heap.push(Reverse(hit));
+                } else if heap.peek().is_some_and(|Reverse(worst)| *worst < hit) {
+                    heap.pop();
+                    heap.push(Reverse(hit));
+                }
+            }
+        }
+        let mut kept: Vec<(bool, u32, u32, u32)> =
+            heap.into_iter().map(|Reverse(hit)| hit).collect();
+        // 保留的那段按「精确在前、词频降序」输出，与原前缀查询的先后一致
+        kept.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| b.1.cmp(&a.1)));
+        for (exact, _, index, offset) in kept {
+            let entry = &self.index[index as usize];
+            let position = entry.first_slot as usize + offset as usize;
+            let key = self.key(entry);
+            out.push(self.make_match(key, &self.slots[position], position, exact));
+        }
+        out
+    }
+
     /// 每个位置给多种写法（模糊音：`zi` 也接受 `zhi`），命中音节数 ≥ 位置数、逐位满足其中一种写法的词。
     ///
     /// 同一位置的写法之间不能互相覆盖（前缀 `z` 已包含前缀 `zh`，两者不要同时给；同一写法不要重复），
@@ -705,16 +763,26 @@ impl Dictionary {
         let range =
             entry.first_slot as usize..entry.first_slot as usize + entry.slot_count as usize;
         for position in range {
-            let slot = &self.slots[position];
-            out.push(Match {
-                text: self.text(slot),
-                pinyin: key,
-                frequency: slot.frequency,
-                reading_total: self.reading_total(key, self.text(slot)),
-                tones: self.tones(position, slot),
-                secondary: self.secondary,
-                exact,
-            });
+            out.push(self.make_match(key, &self.slots[position], position, exact));
+        }
+    }
+
+    /// 造一条命中。多音字的读音总和与声调都在这里算，所以调用方要克制（见 [`Self::lookup_initial_top`]）。
+    fn make_match<'a>(
+        &'a self,
+        key: &'a str,
+        slot: &'a Slot,
+        position: usize,
+        exact: bool,
+    ) -> Match<'a> {
+        Match {
+            text: self.text(slot),
+            pinyin: key,
+            frequency: slot.frequency,
+            reading_total: self.reading_total(key, self.text(slot)),
+            tones: self.tones(position, slot),
+            secondary: self.secondary,
+            exact,
         }
     }
 

@@ -3,9 +3,15 @@
 use qingjian_dictionary::Match;
 
 use crate::correction::typo;
-use crate::engine::Learner;
+use crate::engine::{Learner, MAX_CANDIDATES};
 use crate::fuzzy::Expanded;
 use crate::{Engine, Segmentation, correction, sentence};
+
+/// 单字母简拼的有界查询上限：词频最高的这么多条就够排了。
+///
+/// 取 [`MAX_CANDIDATES`] 的两倍，与 [`crate::ranking::rank`] 里预选的条数一致——那边命中太多时也是先按
+/// 结构键 + 词频砍到这个量再排序，所以这条快路径交出去的集合与「全量查完再预选」基本相同。
+pub(in crate::engine) const SINGLE_LETTER_HITS: usize = MAX_CANDIDATES * 2;
 
 impl Engine {
     /// 每个位置的写法：敲的原样、模糊音，再加音节级敲错变体（`correction::typo`）当带代价的边，
@@ -60,6 +66,31 @@ impl Engine {
             hit.text,
             sentence::fallback_log_prob(hit.frequency, hit.secondary, log_total),
         ) - sentence::reading_cost(hit)
+    }
+
+    /// 单字母简拼（一个位置、一种写法）时的词级查找：与 [`Self::lookup_all`] 同一个命中集合，
+    /// 只取词频最高的一批（[`SINGLE_LETTER_HITS`]）。
+    ///
+    /// 首键每打一次都要过一次：一个字母能带出几万条词目，而排完序只用得到前几百条。只要形状对不上
+    /// （模糊音给了多个写法、多音节）就退回全量，结果与全量查询逐条一致。
+    pub(in crate::engine) fn lookup_all_top(
+        &self,
+        positions: &[Vec<qingjian_dictionary::SyllablePattern<'_>>],
+        limit: usize,
+    ) -> Vec<Match<'_>> {
+        let letter = match positions {
+            [forms] if forms.len() == 1 => forms[0].text,
+            _ => return self.lookup_all(positions),
+        };
+        let mut hits = self.dictionary.lookup_initial_top(letter, limit);
+        for dictionary in self.all_dictionaries().into_iter().skip(1) {
+            if dictionary.is_secondary() {
+                hits.extend(dictionary.lookup_exact_alt(positions));
+            } else {
+                hits.extend(dictionary.lookup_initial_top(letter, limit));
+            }
+        }
+        hits
     }
 
     /// 主词库与用户词一起查（每个位置多种写法）。用户词是用户自己选过的（云联想接受的词等），排序上靠 weight 自然靠前。

@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 
 use qingjian_dictionary::Match;
 
+use super::lookup::SINGLE_LETTER_HITS;
 use crate::engine::query::chinese_candidate;
 use crate::engine::{
     Learner, MAX_CANDIDATES, abbreviated_count, choice_key, pattern_key, segment_longest_prefix,
@@ -196,6 +197,14 @@ impl Engine {
 
         let start = Instant::now();
         let mut scored = Vec::new();
+        // 单字母、无辅码、非双拼 / 注音：整段只有一条切分、一个位置、一种写法，可以走有界查询
+        // （见 `lookup_all_top`）。加了辅码就要按码段筛全部词，模糊音也可能给多个写法，都不在此列
+        let single_letter = keys.len() == 1
+            && segmentations.len() == 1
+            && segmentations[0].syllables.len() == 1
+            && self.aux_filter().is_none()
+            && self.shuangpin.is_none()
+            && !self.zhuyin;
         // 不同切分共享很多前缀（`zh g d o…` 的各种切法前几段一样），同一次查询里同一个模式只查一遍
         let mut memo: HashMap<String, Vec<Match<'_>>> = HashMap::new();
         // 有一种切法全是完整音节时，别的切法里拆开的音节（`shan` 拆成 `s h an` / `sha n`）多半不是用户的意思
@@ -231,7 +240,13 @@ impl Engine {
             let positions = expanded.positions();
             let abbreviated = abbreviated_count(&patterns);
             // 没有替代写法时每条命中都是敲的原音节，`penalty` 直接给 0（单字母简拼能命中几万条）
-            let hits = self.lookup_all(&positions);
+            let hits = if single_letter && !patterns[0].complete && positions[0].len() == 1 {
+                // 一个字母能带出几万条词目，排完序只用得到前几百条：只取词频最高的一批，
+                // 省掉其余命中构造 `Match`（读音总和、声调、文本切片）的开销
+                self.lookup_all_top(&positions, SINGLE_LETTER_HITS)
+            } else {
+                self.lookup_all(&positions)
+            };
             let whole_split = clean && segmentation.syllables.iter().any(|x| !x.complete);
             // 末音节读成它的模糊音写法（`zi` 开 z-zh 读成 zhi）也算打完的末音节：否则模糊音命中的常用字
             // 全排在原样读音的几百个生僻字之后，预选还会把它们砍掉（`li` 开 n-l 的 你 进不了前 500）

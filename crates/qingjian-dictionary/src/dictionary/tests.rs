@@ -333,3 +333,45 @@ fn reading_share_splits_a_polyphone_by_reading_frequency() {
     let bie = dictionary.lookup(&["qu", "bie"], false);
     assert_eq!(bie[0].reading_share(), 1.0);
 }
+
+#[test]
+fn initial_top_keeps_the_most_frequent_hits() {
+    let dictionary = Dictionary::parse(SAMPLE).unwrap();
+    let full = dictionary.lookup_pattern(&[SyllablePattern::prefix("k")]);
+    assert_eq!(
+        texts(&full),
+        ["咖啡", "开", "开发", "开发者", "开饭", "开放"]
+    );
+
+    // 单音节键（开，20000）先于词频，其余按词频：开发 9000、咖啡 5000
+    let top = dictionary.lookup_initial_top("k", 3);
+    assert_eq!(texts(&top), ["开", "开发", "咖啡"]);
+
+    // 上限不小于命中数时就是全量那个集合：单音节键在前，其余词频降序
+    let all = dictionary.lookup_initial_top("k", 100);
+    assert_eq!(
+        texts(&all),
+        ["开", "开发", "咖啡", "开发者", "开放", "开饭"]
+    );
+
+    assert!(dictionary.lookup_initial_top("k", 0).is_empty());
+    assert!(dictionary.lookup_initial_top("", 10).is_empty());
+}
+
+#[test]
+fn initial_top_covers_every_word_of_a_prefix() {
+    let dictionary = Dictionary::parse(SAMPLE).unwrap();
+    let mut want: Vec<_> = dictionary
+        .lookup_pattern(&[SyllablePattern::prefix("k")])
+        .iter()
+        .map(|m| (m.text, m.frequency, m.exact))
+        .collect();
+    let mut got: Vec<_> = dictionary
+        .lookup_initial_top("k", 100)
+        .iter()
+        .map(|m| (m.text, m.frequency, m.exact))
+        .collect();
+    want.sort();
+    got.sort();
+    assert_eq!(got, want);
+}
