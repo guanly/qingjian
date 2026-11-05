@@ -22,6 +22,10 @@ pub enum MenuAction {
     /// 在访达里打开日志目录。
     OpenLogs,
 
+    /// 在访达里打开配置目录（`~/Library/Application Support/Qingjian/`）：`config.toml`、
+    /// 用户词、导入的词库与码表、主题都在这里。
+    OpenConfigDir,
+
     /// 打开下载页（菜单里「有新版本」那一行）。
     OpenDownload,
 
@@ -42,6 +46,7 @@ impl MenuAction {
             Self::OpenSettings => 5,
             Self::OpenSymbolPanel => 6,
             Self::NewWord => 7,
+            Self::OpenConfigDir => 8,
             Self::ToggleFuzzy(index) => FUZZY_TAG_BASE + index as NSInteger,
         }
     }
@@ -55,6 +60,7 @@ impl MenuAction {
             5 => Self::OpenSettings,
             6 => Self::OpenSymbolPanel,
             7 => Self::NewWord,
+            8 => Self::OpenConfigDir,
             _ => {
                 let index = usize::try_from(tag.checked_sub(FUZZY_TAG_BASE)?).ok()?;
                 (index < FuzzyRules::NAMES.len()).then_some(Self::ToggleFuzzy(index))?
@@ -77,6 +83,7 @@ mod tests {
             MenuAction::OpenDownload,
             MenuAction::OpenSymbolPanel,
             MenuAction::NewWord,
+            MenuAction::OpenConfigDir,
             MenuAction::ToggleFuzzy(0),
             MenuAction::ToggleFuzzy(FuzzyRules::NAMES.len() - 1),
         ];

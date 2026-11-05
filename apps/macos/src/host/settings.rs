@@ -89,6 +89,13 @@ impl Host {
                     open_with_system(&[&dir.to_string_lossy()]);
                 }
             }
+            // 配置目录：`config.toml`、用户词、导入的词库与码表、主题都在这儿。目录不在时顺手建出来，
+            // 免得用户点开发现是空的、或者访达直接报找不到
+            MenuAction::OpenConfigDir => {
+                if let Some(dir) = crate::app::paths::user_data_dir() {
+                    open_with_system(&[&dir.to_string_lossy()]);
+                }
+            }
             MenuAction::OpenDownload => open_with_system(&[qingjian_update::DOWNLOAD_URL]),
             MenuAction::NewWord => self.new_word(),
             // 要当前会话的文本客户端，控制器在 menuAction: 里先接走了

@@ -86,6 +86,12 @@ impl InputMenu {
         ));
         menu.addItem(&action_item(
             mtm,
+            "打开配置目录",
+            Some(MenuAction::OpenConfigDir),
+            &target,
+        ));
+        menu.addItem(&action_item(
+            mtm,
             "打开日志目录",
             Some(MenuAction::OpenLogs),
             &target,
