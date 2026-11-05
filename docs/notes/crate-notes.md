@@ -517,7 +517,7 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
 第一次要对 darwin 把整棵依赖树检查一遍（只做 check、不生成代码，12 核机器上约半分钟），之后增量一两秒。
 与 CI 的 macOS job 是同一道门（clippy `-D warnings` 含测试目标）；真要跑测试、打包、装机仍得在 Mac 上。
 
-- 输入法菜单（状态项 + 系统输入源菜单）与偏好设置窗口都是配置文件的前端：只写 `config.toml`，`Host::apply_config` 一条通路热加载，激活期间每秒看一次文件 mtime。
+- 输入法菜单（只挂系统输入源菜单，不另挂「中 / 英」状态项）与偏好设置窗口都是配置文件的前端：只写 `config.toml`，`Host::apply_config` 一条通路热加载，激活期间每秒看一次文件 mtime。
   翻页键（`[general] page_keys`）走 `Session::page_target` / `can_turn_page`：选 `-=` 时 `-` / `=` **没有上一页 / 下一页就落回原语义**（英文直输段），别的翻页键翻不动照旧吃键（`imk/controller/display.rs::page_key`）。Windows / Linux 还是老行为，尚未同步。
   输入方案（`[general] scheme` 与 `code`）也在这里装配，交给 `Host::scheme_slot`（`qingjian_platform::SchemeSlot`，随包方案目录是 `paths::bundled_schemes_dir()`）；
   找不到或码表坏了只警告并按拼音跑。顶字与满码自动上屏接在 `imk/controller/text.rs` 收字母那里。

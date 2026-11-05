@@ -10,7 +10,7 @@ use super::target::MenuTarget;
 
 /// 菜单本体与需要按状态刷新的那几项。
 pub struct InputMenu {
-    /// 菜单。挂到状态项和 IMK `menu` 回调的是同一个对象。
+    /// 菜单。挂到 IMK `menu` 回调（系统输入源菜单）上的就是它。
     menu: Retained<NSMenu>,
 
     /// 「云联想」勾选项。
@@ -132,7 +132,7 @@ impl InputMenu {
         }
     }
 
-    /// 给状态项 / IMK 回调用的菜单对象。
+    /// 给 IMK `menu` 回调（系统输入源菜单）用的菜单对象。
     pub fn ns_menu(&self) -> Retained<NSMenu> {
         self.menu.clone()
     }

@@ -49,7 +49,7 @@ use crate::app::BundleInfo;
 use crate::app::{Settings, logging, paths};
 use crate::candidates::{CandidateWindow, Frame, Preedit, Row};
 use crate::error::HostError;
-use crate::menubar::{InputMenu, MenuAction, ModeIndicator};
+use crate::menubar::{InputMenu, MenuAction};
 use crate::preferences::{PreferencesWindow, Setting, SettingValue, UpdateStatus};
 
 use cloud::{CloudTestMonitor, PredictMonitor};
@@ -69,10 +69,7 @@ pub struct Host {
     /// 候选窗口。
     pub window: CandidateWindow,
 
-    /// 菜单栏的中 / 英状态项。
-    pub indicator: ModeIndicator,
-
-    /// 输入法菜单，挂在状态项和系统输入源菜单上。
+    /// 输入法菜单，挂在系统输入源菜单上（IMK `menu` 回调）。
     pub menu: InputMenu,
 
     /// 偏好设置窗口。

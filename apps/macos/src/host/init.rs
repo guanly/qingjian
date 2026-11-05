@@ -123,9 +123,7 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
         items: Box::new(crate::imk::menu_items),
         pick: std::rc::Rc::new(crate::imk::menu_pick),
     });
-    let mut indicator = ModeIndicator::new(mtm);
     let menu = InputMenu::new(mtm, version);
-    indicator.set_menu(&menu.ns_menu());
     let preferences = PreferencesWindow::new(mtm, &languages, version, &info.build);
     let monitor = PredictMonitor::new(mtm);
     let watch = ConfigWatch::new(mtm);
@@ -135,7 +133,6 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
         *host.borrow_mut() = Some(Host {
             engine,
             window,
-            indicator,
             menu,
             preferences,
             settings,

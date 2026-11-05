@@ -10,8 +10,8 @@ define_class!(
     #[unsafe(super(NSObject))]
     #[thread_kind = MainThreadOnly]
     #[ivars = ()]
-    /// 状态项菜单的 target：输入法进程没有 key window，nil target 走不到响应链，得有个实体收 action。
-    /// 输入源菜单那边的同名选择器在控制器上，两边都汇到 [`host::Host::perform`]。
+    /// 输入法菜单的 target：输入法进程没有 key window，nil target 走不到响应链，得有个实体收 action。
+    /// 控制器上也有同名的 `menuAction:`（IMK 转发来的那几个走那边），两条都汇到 [`host::Host::perform`]。
     pub struct MenuTarget;
 
     impl MenuTarget {

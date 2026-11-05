@@ -146,13 +146,12 @@ impl Host {
         true
     }
 
-    /// 中英模式或 Caps Lock 可能变了：刷新状态条与候选窗口的输入状态，变了就弹一次右上角提示。
+    /// 中英模式或 Caps Lock 可能变了：刷新候选窗口的输入状态，变了就弹一次右上角提示。
     ///
     /// 中英变了显示「中」/「英」（优先）；只有大小写变了才显示「大写」/「小写」——后者出现在勾了
     /// 「单击 Shift」之后，那时 Caps Lock 退化成只管大小写。
     pub fn refresh_mode_ui(&mut self) {
         let english = self.english_mode();
-        self.indicator.update(english);
         let caps = modifiers::caps_lock_on();
         // 第一次只记不弹：启动或刚激活时不该凭空冒一个提示
         if self.last_osd_english.is_some_and(|last| last != english) {

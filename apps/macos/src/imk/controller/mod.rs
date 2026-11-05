@@ -133,8 +133,6 @@ define_class!(
                     h.refresh_text_replacements();
                     h.reload_config_if_changed();
                     h.mode_switch.reset();
-                    let english = h.english_mode();
-                    h.indicator.activate(english);
                     h.watch.start();
                 });
             });
@@ -175,7 +173,6 @@ define_class!(
                 host::with(|h| {
                     h.cancel_prediction();
                     h.window.hide();
-                    h.indicator.deactivate();
                     h.watch.stop();
                     h.mode_switch.reset();
                     h.forget_osd_state();
@@ -188,7 +185,6 @@ define_class!(
                 recover_from_panic(client);
                 // 善后里没做的收尾：学习数据还是要落盘
                 host::with(|h| {
-                    h.indicator.deactivate();
                     h.watch.stop();
                     h.mode_switch.reset();
                     h.forget_osd_state();
