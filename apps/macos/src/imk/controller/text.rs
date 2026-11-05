@@ -147,6 +147,14 @@ impl QingjianInputController {
         let expression = composing && host::with(|h| h.engine.expression_mode()).unwrap_or(false);
         // 英文直输段（缓冲区里已有 `-` 这类字符）：可见字符一律追加，空格 / 回车整段原样上屏
         let raw = composing && host::with(|h| h.engine.raw_mode()).unwrap_or(false);
+        // 组句中敲 `（键帽上印的是 ·）：把缓冲区里的字母原样上屏，临时打英文 / 字母串用。
+        // 回车在聊天框里是「发送」，Shift 加字母一次只出一个，都没有这个键顺手。
+        // 不在组句里时它还是间隔号（见 `punctuation::Punctuation::convert`），问字与表达式模式不动；
+        // 把它配成翻页键（`[shortcut] extra_page_keys`）时以翻页为准
+        if composing && !question && !expression && page_step.is_none() && c == '`' {
+            self.commit_raw(client);
+            return true;
+        }
         // 组句中敲 `-`：进入英文直输段（`no-way`）；配成翻页键（`[general] page_keys` 或 `[shortcut] extra_page_keys` 里的 `-=`）时才翻页
         let hyphen = composing && !question && !aux && c == '-' && page_step.is_none();
         // 问字模式下敲的还可能是码点（`u4e00`、`u+1f600`）：数字与 `+` 进缓冲区而不是选词

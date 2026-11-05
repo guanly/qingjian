@@ -29,7 +29,7 @@ On Windows and Linux, the Chinese / English switch can also be a tap of `Ctrl` o
 | Commit the highlighted candidate (changeable in Settings on Windows and Linux) | `Space` | `Space` | `Space` |
 | Commit candidate N on this page | `1` to `9` | `1` to `9` | `1` to `9` |
 | Commit with the mouse | Click a candidate; click the gloss to its right to commit that gloss | Same | Click a candidate |
-| Commit the letters as typed (changeable in Settings on Windows and Linux) | `Enter` | `Enter` | `Enter` |
+| Commit the letters as typed (changeable in Settings on Windows and Linux) | `Enter`, `` ` `` (printed `·`) | `Enter` | `Enter` |
 | Delete the letter before the cursor (when picking in steps, undo the last pick first) | `Backspace` | `Backspace` | `Backspace` |
 | Delete the letter after the cursor | `Delete` | — | `Delete` |
 | Delete the syllable before the cursor | `⌥ + Backspace` | — | — |
