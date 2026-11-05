@@ -103,7 +103,7 @@ impl Host {
         }
     }
 
-    /// 造词：弹框收一个中文词，读音与形码编码由引擎算好，存完立刻落盘——用户马上要用。
+    /// 造词：弹框收一批中文词（一行一个），读音与形码编码由引擎算好，存完立刻落盘——用户马上要用。
     ///
     /// 框是非模态的（`crate::dialog`），但开框会把本进程激活成前台应用，IMK 随即给这个窗口建输入会话，
     /// 那次 `activateServer` 不能撞在 `Host` 的借用上，所以开框这一步排到主队列，存的时候再借回来。
@@ -115,35 +115,52 @@ impl Host {
             .map(|(text, _)| text.clone())
             .unwrap_or_default();
         defer(move || {
-            new_word::ask(&prefill, |text| {
-                if let Some(text) = text {
-                    with(|host| host.learn_new_word(&text));
+            new_word::ask(&prefill, |words| {
+                if !words.is_empty() {
+                    with(|host| host.learn_new_word(&words));
                 }
             });
         });
     }
 
-    /// 造词真正落地的部分：算读音与编码、写用户词、写形码用户词、回一句提示。
-    fn learn_new_word(&mut self, text: &str) {
-        match self.engine.learn_user_word(text) {
-            Ok(learned) => {
-                self.engine.flush_learning();
-                // 形码方案下再写一条形码用户词：拼音侧与五笔侧都能打出这个词
-                self.save_code_word(&learned);
-                // 造词框关掉后不弹别的框，借模式提示回一句：用户得知道存上了没有
-                self.osd.show(&format!("已造词 {}", learned.text));
-                tracing::info!(
-                    text = %learned.text,
-                    reading = ?learned.reading,
-                    code = ?learned.code,
-                    "造词写入用户词"
-                );
+    /// 造词真正落地的部分：逐个算读音与编码、写用户词与形码用户词，最后回一句提示。
+    ///
+    /// 一批里有的词失败不影响其余——失败的攒起来在最后一次性说清楚是哪个词、为什么。
+    fn learn_new_word(&mut self, words: &[String]) {
+        let mut learned = Vec::with_capacity(words.len());
+        let mut failed = Vec::new();
+        for word in words {
+            match self.engine.learn_user_word(word) {
+                Ok(word) => {
+                    // 形码方案下再写一条形码用户词：拼音侧与五笔侧都能打出这个词
+                    self.save_code_word(&word);
+                    tracing::info!(
+                        text = %word.text,
+                        reading = ?word.reading,
+                        code = ?word.code,
+                        "造词写入用户词"
+                    );
+                    learned.push(word);
+                }
+                Err(reason) => {
+                    tracing::warn!(%reason, %word, "造词失败");
+                    failed.push(format!("{word}：{reason}"));
+                }
             }
-            Err(reason) => {
-                tracing::warn!(%reason, "造词失败");
-                // 报错框同样是模态的，借出去就得等它关掉，一样排到主队列
-                defer(move || new_word::report(&reason));
+        }
+        if !learned.is_empty() {
+            // 一批一起落盘：一个词一次刷盘没必要
+            self.engine.flush_learning();
+            // 造词框关掉后不弹别的框，借模式提示回一句：用户得知道存上了没有
+            match learned.as_slice() {
+                [one] => self.osd.show(&format!("已造词 {}", one.text)),
+                many => self.osd.show(&format!("已造词 {} 个词", many.len())),
             }
+        }
+        if !failed.is_empty() {
+            // 报错框同样是非模态的，借出去就得等它关掉，一样排到主队列
+            let reason = failed.join("\n");
+            defer(move || new_word::report(&reason));
         }
     }
 

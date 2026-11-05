@@ -158,7 +158,8 @@ mac 存在 `Session::spelling`（`Host::follow_highlight`）、Windows / Linux �
   形码方案下 `CodeScheme::code_for` 用码表反查（`CodeTable::codes`，满码优先）或按词码规则（`AuxWordRules::derive`）拼出编码，
   86 五笔规则内置在 `CodeSchemeEntry::load`（两字各前两码、三字各首码、四字以上取前三字与末字首码）。
   入口两个：候选右键「存为用户词」（`candidate_menu::CandidateAction::LearnWord`，只在词库没有该词、且候选带读音时出现，读音直接取候选的）与
-  macOS 菜单「造词…」（`apps/macos/src/host/new_word.rs`，单输入框、用 `Engine::recent_commits` 预填刚上屏的词；
+  macOS 菜单「造词…」（`apps/macos/src/host/new_word.rs`，多行框、**一行一个词**（回车换行、⌘↩ 保存），
+  切行去空行去重后逐个 `learn_user_word`，一批一起 `flush_learning`，失败的词攒成一份说明；用 `Engine::recent_commits` 预填刚上屏的词；
   造出来的编码由 `code_schemes::save_user_word` 写进 `code_dicts/user-words.tsv`，壳每秒比对目录，写盘即重载）。
   候选右键菜单的降权记在 `user-demoted.tsv`（`frequency_learner/demotions.rs`，输入串 → 词 → 降了几次，封顶 99，不衰减），私密输入与关学习时照记。
   词频、个人英文词与敲错表三张表带**时间衰减**（`frequency_learner/decay.rs`，牛顿冷却）：最近使用日记在
@@ -521,7 +522,10 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   输入方案（`[general] scheme` 与 `code`）也在这里装配，交给 `Host::scheme_slot`（`qingjian_platform::SchemeSlot`，随包方案目录是 `paths::bundled_schemes_dir()`）；
   找不到或码表坏了只警告并按拼音跑。顶字与满码自动上屏接在 `imk/controller/text.rs` 收字母那里。
   「造词…」的菜单项在 `menubar/menu.rs`（可点条目只能放在 `OpenLogs` 之前那一组，放到下面两个纯展示条目之间会让 IMK 每次按键后停用菜单、打不了字），
-  动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身在 `host/new_word.rs`。
+  动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身是 `host/new_word.rs` 里的多行框
+  （`dialog::prompt_area`：`NSTextView` 放进 `NSScrollView`，回车归换行，确定键因此是 ⌘↩）。
+  「打开配置目录」（`MenuAction::OpenConfigDir`，tag 8）让用户直接够到 `~/Library/Application Support/Qingjian/`：
+  `paths::user_data_dir()` 会顺手把目录建出来再交给 `open`，`config.toml`、用户词、导入的词库与码表、主题都在这里。
   **输入法进程里不能 `runModal`**（2026-11-04，连着踩两次）：模态框把主线程关进模态 run loop，IMK 的按键派发跟着停摆，
   框里一个字符也收不到，**别的应用也一起打不了字**；切到别的输入法又能打，因为按键不再路由给青简。
   往主队列后排（`host::defer`）解决不了这个，只是把开框挪出 `Host` 的借用。
