@@ -42,7 +42,7 @@ On macOS and Windows, in horizontal layout, you can tick 横排时 ↑ / ↓ 展
 
 When unticked, keys in horizontal layout work as in vertical layout: `↑` / `↓` move the highlight one at a time and `←` / `→` move the pinyin cursor.
 
-A second tick box, 横排时翻页键也展开成多行 (Paging keys also expand to rows in horizontal layout) (unticked by default), is for people who would rather not reach for the arrow keys: when ticked, in horizontal layout the paging keys (main paging keys such as `-` `=`, any extra paging keys you ticked, `PageUp` / `PageDown`, `Shift + Tab`, clicking the arrows beside the page number, and on Windows scrolling the wheel over the candidates) expand the row into the grid like `↓` and move to the next (or previous) row; once expanded, each press turns a whole screen.
+A second tick box, 横排时翻页键也展开成多行 (Paging keys also expand to rows in horizontal layout) (unticked by default), is for people who would rather not reach for the arrow keys: when ticked, in horizontal layout the paging keys (main paging keys such as `-` `=`, any extra paging keys you ticked, `PageUp` / `PageDown`, `Tab` / `Shift + Tab`, clicking the arrows beside the page number, and on Windows scrolling the wheel over the candidates) expand the row into the grid like `↓` and move to the next (or previous) row; once expanded, each press turns a whole screen.
 Once expanded, `↑` `↓` `←` `→` move as in the grid described above, whether or not 横排时 ↑ / ↓ 展开成多行 is ticked.
 
 ## Showing tones on the pinyin line

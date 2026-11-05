@@ -61,10 +61,11 @@ impl QingjianInputController {
             });
             self.refresh(client);
         } else if selector == sel!(insertTab:) {
-            // Tab 与回车同义：把组句里的字母原样上屏（临时打英文 / 字母串），不再翻页。
-            // 例外是整句补全：挂着补全时就接受它——Tab 是它唯一的接受键，吞掉就再也用不上
-            if !self.accept_sentence(client) {
-                self.commit_raw(client);
+            // 英文模式 Tab 选中高亮的词；中文模式有整句补全时接受它，否则翻页
+            if host::with(|h| h.engine.english_mode()).unwrap_or(false) {
+                self.commit_highlighted(client);
+            } else if !self.accept_sentence(client) {
+                self.turn_page(1, client);
             }
         } else if selector == sel!(deleteForward:) {
             host::with(|h| h.engine.delete_forward());

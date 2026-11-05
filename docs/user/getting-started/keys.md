@@ -29,7 +29,7 @@ Windows 与 Linux 的中 / 英切换键还可以选单击 `Ctrl` 或 `Ctrl + Alt
 | 上屏高亮候选（Windows、Linux 可在设置中改） | `Space` | `Space` | `Space` |
 | 上屏当前页第 N 个 | `1` 至 `9` | `1` 至 `9` | `1` 至 `9` |
 | 用鼠标上屏 | 点候选；点候选右侧的译词则上屏那条译词 | 同左 | 点候选 |
-| 将敲的字母原样上屏（Windows、Linux 可在设置中改） | `Enter`、`Tab`（没补全时） | `Enter` | `Enter` |
+| 将敲的字母原样上屏（Windows、Linux 可在设置中改） | `Enter` | `Enter` | `Enter` |
 | 删除光标前一个字母（分几次选词时先撤回最后一次选择） | `Backspace` | `Backspace` | `Backspace` |
 | 删除光标后一个字母 | `Delete` | — | `Delete` |
 | 删除光标前一个音节 | `⌥ + Backspace` | — | — |
@@ -37,7 +37,7 @@ Windows 与 Linux 的中 / 英切换键还可以选单击 `Ctrl` 或 `Ctrl + Alt
 | 清空 | `Esc` | `Esc` | `Esc` |
 | 移动高亮（到页边自动翻页） | `↑` / `↓`；可启用 Emacs 风格候选键 | `↑` / `↓` | `↑` / `↓` |
 | 翻页 | `[` `]`、`PageUp` / `PageDown`、`⇧ + Tab`（上一页）；点页码两侧的箭头 | `[` `]`、`PageUp` / `PageDown`、`Shift + Tab`（上一页）；点页码两侧的箭头，或在候选上滚动鼠标滚轮 | `[` `]`、`PageUp` / `PageDown`、`Shift + Tab`（上一页） |
-| 接受 AI 整句补全 | `Tab` | `Tab` | `Tab` |
+| 接受 AI 整句补全（无补全时下一页） | `Tab` | `Tab` | `Tab` |
 | 移动拼音光标 | `←` / `→` | `←` / `→` | `←` / `→` |
 | 按音节移动光标 | `⌥ + ←` / `⌥ + →` | — | — |
 | 光标移到开头 / 末尾 | `⌘ + ←` / `⌘ + →`，或 `Home` / `End` | `Home` / `End` | `Home` / `End` |

@@ -58,7 +58,7 @@ Changing either option or toggling 英文模式 (English mode) clears the rememb
 In English mode, the candidate window offers English word completions and spelling corrections as you type: `recieve` → receive, `seperate` → separate.
 Letters are lowercase by default; hold `Shift` for capitals.
 
-- Picking works as in Chinese mode: `Space` picks the highlighted candidate (and the space is still typed after the word), a number key picks candidate N on this page (if there's no candidate N, the digit joins the word, as in `foo1`), paging keys page, and `↑` / `↓` move the highlight; `Tab` commits the letters as typed just like `Enter` (macOS), while on Windows and Linux `Tab` picks the highlighted item.
+- Picking works as in Chinese mode: `Space` picks the highlighted candidate (and the space is still typed after the word), a number key picks candidate N on this page (if there's no candidate N, the digit joins the word, as in `foo1`), paging keys page, `↑` / `↓` move the highlight, and `Tab` also picks the highlighted item.
 - **`Enter` and punctuation commit the letters exactly as typed**: words that aren't in the word list, like `kubectl`, come out as typed when you press `Enter`; with no candidates, `Space` also commits as typed.
 - For words with digits (`mp3`, `utf8`), press `Enter` to output the letters, then type the digits; with no candidates, digits simply follow the letters.
 - Punctuation is always half-width on macOS; on Windows and Linux it's half-width by default and can be made full-width, see [Punctuation, symbols and emoji](punctuation.md).
