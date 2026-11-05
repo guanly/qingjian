@@ -2,14 +2,14 @@
 //!
 //! 组句期间 `,` `.` 是翻页键、`-` `=` 也是，这些由壳决定；这里只回答「这个半角字符在中文模式下该变成什么」。
 
-/// 这个半角字符是不是会转成全角标点的一员（`,` `.` `?` `!` 引号、括号这些）。
-/// 壳用它分流组句中的标点：会转的先把高亮候选上屏再补标点（`nihao,` 一气打完「你好，」），
-/// 其余（`-` `/` `@`）仍进英文直输段。数字后的 `.` 保持半角是 [`Punctuation::convert`] 的状态决定的，
-/// 这里照算「会转」，上屏候选后交给它判断即可。
+/// 这个半角字符是不是会转成全角标点的一员（`,` `.` `?` `!` 引号、括号、`/` 这些）。
+/// 数字后的 `.` 保持半角是 [`Punctuation::convert`] 的状态决定的，这里照算「会转」，
+/// 上屏候选后交给它判断即可。组句里到底要不要先上屏候选，看 [`commits`]。
 pub fn converts(c: char) -> bool {
     matches!(
         c,
         ',' | '.'
+            | '/'
             | '?'
             | '!'
             | ':'
@@ -31,6 +31,15 @@ pub fn converts(c: char) -> bool {
             | '\''
             | '`'
     )
+}
+
+/// 组句里敲这个字符要不要先上屏高亮候选、再补标点（`nihao,` 一气打完「你好，」）；
+/// 不然它进缓冲区、整段成为英文直输段（`a@b`）。
+///
+/// 一般跟着 `[general] punct_commits` 开关走。`/` 是例外：中文模式下它就是顿号，与搜狗、微软拼音一致，
+/// 敲它的人不会想打半角斜杠，所以不看开关。要半角 `/` 就切英文模式，或已经在直输段里接着敲（`no-way/x`）。
+pub fn commits(c: char, punct_commits: bool) -> bool {
+    converts(c) && (punct_commits || c == '/')
 }
 
 /// 引号成对切换的状态。
@@ -67,7 +76,8 @@ impl Punctuation {
             '}' => "」",
             '<' => "《",
             '>' => "》",
-            '\\' => "、",
+            // 顿号：`/` 与 `\` 都给。`/` 是搜狗、微软拼音的习惯，手不用离开主键区；`\` 是 Windows 上的老习惯
+            '/' | '\\' => "、",
             '^' => "……",
             '_' => "——",
             '$' => "￥",
@@ -129,6 +139,25 @@ mod tests {
         assert_eq!(Punctuation::default().convert('`'), Some("·"));
     }
 
+    /// 中文模式下 `/` 出顿号（搜狗、微软拼音同样如此），`\` 那份映射保留。
+    #[test]
+    fn slash_and_backslash_map_to_enumeration_comma() {
+        assert_eq!(Punctuation::default().convert('/'), Some("、"));
+        assert_eq!(Punctuation::default().convert('\\'), Some("、"));
+        assert!(converts('/'));
+    }
+
+    /// 组句中标点先上屏候选跟着开关走，唯独 `/`（顿号）不看开关；不会转全角的符号永不先上屏。
+    #[test]
+    fn slash_commits_regardless_of_the_switch() {
+        assert!(commits('/', false));
+        assert!(commits('/', true));
+        assert!(!commits(',', false));
+        assert!(commits(',', true));
+        assert!(!commits('@', true));
+        assert!(!commits('-', true));
+    }
+
     #[test]
     fn period_after_digit_stays_ascii() {
         let mut p = Punctuation::default();
@@ -149,9 +178,9 @@ mod tests {
             assert_eq!(converts(c), convertible, "{c}");
         }
         assert!(converts('\''));
+        assert!(converts('/'));
         assert!(!converts('a'));
         assert!(!converts('-'));
-        assert!(!converts('/'));
         assert!(!converts('@'));
         assert!(!converts('中'));
     }

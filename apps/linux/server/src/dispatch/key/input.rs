@@ -336,14 +336,15 @@ impl Router {
             return Effect::Changed(Some(self.commit_highlighted()));
         }
         // 表达式 / 问字模式下的其他字符不进缓冲区（与 macOS 壳一致）；
-        // 普通拼音组句里的标点也一样——会转全角的（`,` `.` `?` `!` 引号、括号这些）先把高亮候选上屏再补标点
+        // 普通拼音组句里的标点也一样——会转全角的（`,` `.` `?` `!` 引号、括号、`/` 这些）先把高亮候选上屏再补标点
         //（`nihao,` 一气打完「你好，」），翻页键已在前面上方拦走，数字后的 `.` 是否保持半角由 Core 判断；
         // 这条上屏行为由 `[general] punct_commits` 控制（缺省关：标点进英文直输段）。
-        // 不会转的符号（`-` `/` `@`）仍进英文直输段；`'` 是隔音符，任何模式都进缓冲区。
+        // 不会转的符号（`-` `@`）仍进英文直输段；`'` 是隔音符，任何模式都进缓冲区。
+        // `/`（顿号）不看上面的开关，判定在 `punctuation::commits` 里；已在直输段时上面已提前返回并追加半角（`no-way/x`）。
         if c != '\''
             && (expression
                 || self.engine.question_mode()
-                || (self.config.punct_commits && punctuation::converts(c)))
+                || punctuation::commits(c, self.config.punct_commits))
         {
             // 高亮候选没吃完拼音时它留在组句里：连同前面留着的先交给应用，标点才接得在后面
             let committed = self.commit_highlighted() + &self.engine.take_held();

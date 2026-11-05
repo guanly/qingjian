@@ -155,12 +155,12 @@ impl QingjianInputController {
         // 微软 / 搜狗双拼的 `;` 是 ing 键：末尾有落单声母时进缓冲区，其他时候还是标点
         let semicolon =
             composing && c == ';' && host::with(|h| h.engine.takes_semicolon()).unwrap_or(false);
-        // 组句中敲不会转全角的符号（`/` `@`，`-` 由上面的 hyphen 接）：进缓冲区，整段成为英文直输段（`a@b`），
+        // 组句中敲不会转全角的符号（`@`，`-` 由上面的 hyphen 接）：进缓冲区，整段成为英文直输段（`a@b`），
         // 中文模式下也能打带符号的英文；翻页键除外。
-        // 会转全角的标点（`,` `.` `?` `!` 引号、括号这些）不进缓冲区：落到下方先把高亮候选上屏再补全角标点
+        // 会转全角的标点（`,` `.` `?` `!` 引号、括号、`/` 这些）不进缓冲区：落到下方先把高亮候选上屏再补全角标点
         //（`nihao,` 一气打完「你好，」），与 Windows / Linux 壳一致；这条上屏行为由 `[general] punct_commits`
-        // 控制（缺省开），关掉恢复老行为：标点也进缓冲区（英文直输段）。
-        // 单用形码时标点总是先上屏（五笔的习惯），不看这个开关
+        // 控制（缺省关：标点进缓冲区当英文直输），单用形码时总是先上屏（五笔的习惯）。
+        // `/` 是顿号、不看这个开关，判定都在 `punctuation::commits` 里
         let punct_commits =
             host::with(|h| h.punct_commits || h.engine.composing_code()).unwrap_or(false);
         let punctuation = composing
@@ -169,7 +169,7 @@ impl QingjianInputController {
             && !expression
             && c.is_ascii_punctuation()
             && page_step.is_none()
-            && !(punct_commits && qingjian_core::punctuation::converts(c));
+            && !qingjian_core::punctuation::commits(c, punct_commits);
         // 形码满码再敲字母：先把高亮候选顶上屏，这个字母起下一段编码
         if host::with(|h| h.engine.code_tops(c)).unwrap_or(false) {
             self.commit_highlighted(client);

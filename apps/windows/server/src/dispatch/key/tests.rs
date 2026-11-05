@@ -272,6 +272,27 @@ fn punct_commits_off_keeps_punctuation_in_raw_segment() {
     );
 }
 
+/// 中文模式下 `/` 是顿号，与其他标点不同：`punct_commits` 关着（缺省）也在组句中先上屏候选，
+/// 否则 `ni/` 会整段变成英文直输；已经在直输段里时仍是半角，`ni-x/y` 这类串照常打。
+#[test]
+fn slash_is_an_enumeration_comma_without_punct_commits() {
+    let mut router = router(5);
+    let normal = KeyModifiers::default();
+    assert!(!router.config.punct_commits);
+    compose(&mut router, "ni", normal);
+    let result = key(&mut router, 0xBF, Some('/'), normal);
+    assert_eq!(result.0, KeyOutcome::Consumed);
+    assert_eq!(result.1.as_deref(), Some("你、"));
+
+    compose(&mut router, "ni", normal);
+    assert_eq!(key(&mut router, 0xBD, Some('-'), normal).1, None);
+    assert_eq!(key(&mut router, 0xBF, Some('/'), normal).1, None);
+    assert_eq!(
+        key(&mut router, 0x20, Some(' '), normal).1.as_deref(),
+        Some("ni-/ ")
+    );
+}
+
 /// 英文候选里 `-` `=` 作翻页键：`-` 翻得回上一页；第一页没得翻时 `-` 仍是单词里的连字符。
 #[test]
 fn english_minus_pages_back_and_stays_a_hyphen_on_the_first_page() {
