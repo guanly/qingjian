@@ -117,6 +117,9 @@ pub struct Host {
     /// 上次装附加词库时用户 `dicts/` 的文件快照：设置程序导入的词库不一定改配置（本来就没关着），靠它发现新文件。
     dictionary_files: Vec<(PathBuf, Option<std::time::SystemTime>, u64)>,
 
+    /// 读学习数据时 `user-words.tsv` 的快照：设置程序导入造词备份后，靠它发现文件被换过。
+    user_word_stamp: Option<(Option<std::time::SystemTime>, u64)>,
+
     /// 候选词后面带上辅码（配置 `[general] aux_code_show`）。
     pub aux_code_show: bool,
 

@@ -149,6 +149,7 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             aux_files: Vec::new(),
             code_word_files: Vec::new(),
             dictionary_files: Vec::new(),
+            user_word_stamp: super::config::user_word_stamp(),
             aux_code_show: false,
             dictionary_list: Vec::new(),
             learning_language,

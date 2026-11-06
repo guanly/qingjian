@@ -618,9 +618,17 @@ impl Engine {
     }
 
     pub fn with_learner(mut self, learner: Box<dyn Learner>) -> Self {
+        self.set_learner(learner);
+        self
+    }
+
+    /// 运行时换一份学习数据：设置程序导入了用户词的备份之后，壳重读磁盘上的那份换进来。
+    ///
+    /// 换进来的表带着磁盘上的全部内容，所以调用方不该先 `flush` 旧的——那会把刚导入的合并结果
+    /// 整份盖回去。整句格子按新表重算。
+    pub fn set_learner(&mut self, learner: Box<dyn Learner>) {
         self.learner.replace(learner);
         self.forget_span_cache();
-        self
     }
 
     pub fn with_input_logger(mut self, logger: Box<dyn InputLogger>) -> Self {

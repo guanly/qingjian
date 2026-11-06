@@ -253,6 +253,9 @@ impl Host {
             let config = self.settings.config().clone();
             self.apply_scheme(&config);
         }
+        if user_word_stamp() != self.user_word_stamp {
+            self.reload_learning();
+        }
         if super::dictionaries::dictionary_files() != self.dictionary_files {
             self.reload_dictionaries();
         }
@@ -325,6 +328,20 @@ impl Host {
         );
         self.code_word_files = code_word_files();
     }
+
+    /// 用户词文件被别处换过（设置程序导入了造词备份、手改过）：重读学习数据，下一键就用上新词。
+    ///
+    /// 不先 `flush`：内存里那份旧的会把刚导入的合并结果整份盖回去。代价是最近几秒还没落盘的
+    /// 造词与选择会丢——导入本来就是用户要求「换成这份数据」的动作。
+    fn reload_learning(&mut self) {
+        self.user_word_stamp = user_word_stamp();
+        let Some(dir) = paths::user_data_dir() else {
+            return;
+        };
+        let learner = super::init::load_learner(&dir);
+        tracing::info!(entries = learner.len(), "用户词有变化，已重读学习数据");
+        self.engine.set_learner(Box::new(learner));
+    }
 }
 
 /// 用户 `code_dicts/` 的快照，只 stat。
@@ -335,4 +352,11 @@ fn code_word_files() -> Vec<(std::path::PathBuf, Option<std::time::SystemTime>, 
             qingjian_platform::code_schemes::words_snapshot(&dir)
         })
         .unwrap_or_default()
+}
+
+/// 造词框造的那份用户词（`user-words.tsv`）的快照；还没造过词时为空。
+pub(super) fn user_word_stamp() -> Option<(Option<std::time::SystemTime>, u64)> {
+    let path = paths::user_data_dir()?.join(qingjian_platform::USER_WORDS_FILE);
+    let metadata = std::fs::metadata(path).ok()?;
+    Some((metadata.modified().ok(), metadata.len()))
 }
