@@ -253,3 +253,32 @@ fn a_hand_made_code_word_lands_in_the_user_words_file() {
     assert_eq!(text, "# scheme: wubi98\n青简\tgetu98\t100\n");
     assert_eq!(code_words_scheme(&path).as_deref(), Some("wubi98"));
 }
+
+/// 同一个方案的两份自造词合成一份：包内的词优先，本机独有的留着，方案头只写一行。
+#[test]
+fn user_code_words_merge_within_one_scheme() {
+    let local = "# scheme: wubi86\n拉混\truji\t100\n账套\tytmo\t100\n";
+    let imported = "# scheme: wubi86\n账套\tytmk\t100\n青简\tgetu\t100\n";
+    assert_eq!(
+        merge_user_words(local, imported),
+        "# scheme: wubi86\n账套\tytmk\t100\n青简\tgetu\t100\n拉混\truji\t100\n"
+    );
+}
+
+/// 两个方案的自造词不混：编码对不上，整份用包内的（与 `save_user_word` 换方案时一致）。
+#[test]
+fn user_code_words_of_another_scheme_replace_the_local_ones() {
+    let local = "# scheme: wubi86\n拉混\truji\t100\n";
+    let imported = "# scheme: wubi98\n拉混\truji98\t100\n";
+    assert_eq!(merge_user_words(local, imported), imported);
+}
+
+/// 一边没写方案头（老文件）时只按词合并，不丢掉任何一边。
+#[test]
+fn user_code_words_without_a_header_still_merge() {
+    let merged = merge_user_words("拉混\truji\t100\n", "# scheme: wubi86\n青简\tgetu\t100\n");
+    assert_eq!(
+        merged,
+        "# scheme: wubi86\n青简\tgetu\t100\n拉混\truji\t100\n"
+    );
+}

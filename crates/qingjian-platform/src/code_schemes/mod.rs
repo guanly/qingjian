@@ -9,6 +9,7 @@
 mod descriptor;
 mod entry;
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -194,6 +195,42 @@ pub fn save_user_word(
     out.push_str(&format!("{text}\t{code}\t100\n"));
     std::fs::write(&path, out)?;
     Ok(path)
+}
+
+/// 合并两份自造形码词（[`USER_WORDS_FILE`]）：按词去重，包内那条为准，本机独有的词留在后面。
+///
+/// 文件头的方案 id（[`SCHEME_HEADER`]）不一样就整份用 `imported`：编码与方案绑死，
+/// 两套混在一起只会串码，与 [`save_user_word`] 换了方案时丢掉旧词的做法一致。
+/// 有一边没写头（老文件）时只按词合并，不拿不准的信息去丢词。
+pub fn merge_user_words(local: &str, imported: &str) -> String {
+    if let (Some(here), Some(there)) = (scheme_of(local), scheme_of(imported))
+        && here != there
+    {
+        return imported.to_owned();
+    }
+    let mut out = String::new();
+    if let Some(scheme) = scheme_of(imported) {
+        out.push_str(&format!("{SCHEME_HEADER} {scheme}\n"));
+    }
+    let mut seen: HashSet<String> = HashSet::new();
+    for line in imported.lines().chain(local.lines()) {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let word = trimmed.split('\t').next().unwrap_or_default();
+        if seen.insert(word.to_owned()) {
+            out.push_str(trimmed);
+            out.push('\n');
+        }
+    }
+    out
+}
+
+/// 词库文件头记的方案 id。
+fn scheme_of(text: &str) -> Option<&str> {
+    text.lines()
+        .find_map(|line| line.trim().strip_prefix(SCHEME_HEADER).map(str::trim))
 }
 
 /// 一个 `schemes` 目录下的方案，按 id 排。不能用的跳过并记日志：一套方案坏了不能拖垮别的。

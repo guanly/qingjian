@@ -48,11 +48,14 @@ To start your typing habits over, delete the tables whose names start with `user
 
 ## Moving to another computer
 
-导入、导出设置 (Import, export settings) under 设置 → 高级 (Settings → Advanced) saves your settings as a `.toml` file to import on the other computer:
+导入、导出设置 (Import, export settings) under 设置 → 高级 (Settings → Advanced) saves your settings and your own words as a `.zip` to import on the other computer:
 
 - The exported file leaves out custom phrases (imported and exported separately on the 自定义短语 page), the AI service key and the floating status bar's position on screen; importing keeps this computer's own values for those.
+- The zip holds `config.toml` (settings), `user-words.tsv` (words made in the New Word panel) and `code_dicts/user-words.tsv` (words made for shape-based schemes such as Wubi). Words are merged: words that only exist on this computer stay, and a word found in both comes from the bundle.
 - Importing replaces the rest of the settings, and first saves the old configuration as `config.before-import.toml` in the same folder so you can copy it back. If the file's settings can't be read, nothing changes.
-- Typing habits, your own words, imported dictionaries and other data files aren't included; to move them too, fully quit Qingjian on both computers and copy the whole data folder (between the same version).
+- On macOS and Windows the imported words are in use from the next keystroke, because the input method notices the changed file and rereads it; Linux has no word-making feature and only takes the settings.
+- A `.toml` settings file exported by 0.3.2 or earlier still imports, it just carries no words.
+- Typing habits, imported dictionaries and other data files aren't included; to move them too, fully quit Qingjian on both computers and copy the whole data folder (between the same version).
 
 ## Runtime logs
 

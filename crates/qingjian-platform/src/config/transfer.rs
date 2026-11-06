@@ -1,5 +1,7 @@
-//! 设置的导出与导入（换电脑、备份用）：只搬设置，不带自定义短语（短语另有自己的导入导出）、云服务密钥
-//! 与悬浮状态条在这台屏幕上的位置。导入前先当配置读一遍，读不通就不动现有文件。
+//! 设置的导出与导入（换电脑、备份用）：只搬设置与用户造的词，不带自定义短语（短语另有自己的导入导出）、
+//! 云服务密钥与悬浮状态条在这台屏幕上的位置。导入前先当配置读一遍，读不通就不动现有文件。
+
+use std::collections::HashSet;
 
 use toml_edit::{DocumentMut, Item};
 
@@ -16,6 +18,42 @@ const LOCAL: &[(&str, &str)] = &[
 
 /// 自定义短语的表名。
 const PHRASES: &str = "custom_phrases";
+
+/// 用户词文件名：造词框造的词（`qingjian-learning` 写在数据目录）与自造形码词
+/// （`code_schemes::save_user_word` 写在 `code_dicts/` 下）同名，导出时两份都进 zip。
+pub const USER_WORDS_FILE: &str = "user-words.tsv";
+
+/// 合并两份用户词（`词\t拼音\t词频`，一行一条，`#` 开头是注释）：按词去重，同名同音以 `imported`
+/// 为准，`local` 独有的词照原顺序接在后面。
+///
+/// 注释只留 `imported` 的——两边都是同一句表头，抄两遍没有意义。导入是「换电脑」和「补备份」
+/// 两个场景共用的，谁都不该丢词，所以不整份替换。
+pub fn merge_user_words(local: &str, imported: &str) -> String {
+    let mut out = String::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for (text, first) in [(imported, true), (local, false)] {
+        for line in text.lines() {
+            let line = line.trim_end();
+            let trimmed = line.trim_start();
+            if trimmed.is_empty() {
+                continue;
+            }
+            if trimmed.starts_with('#') {
+                if first {
+                    out.push_str(line);
+                    out.push('\n');
+                }
+                continue;
+            }
+            let word = trimmed.split('\t').next().unwrap_or_default();
+            if seen.insert(word.to_owned()) {
+                out.push_str(line);
+                out.push('\n');
+            }
+        }
+    }
+    out
+}
 
 /// 把配置文件的内容变成导出文件：注释与写法照旧，去掉短语、密钥与状态条位置。
 pub fn export_settings(source: &str) -> Result<String, String> {
@@ -74,7 +112,7 @@ fn parse(source: &str) -> Result<DocumentMut, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{export_settings, import_settings};
+    use super::{export_settings, import_settings, merge_user_words};
 
     const HERE: &str = "# 我的注释\n[general]\npage_size = 5\n\n[predict]\napi_key = \"sk-here\"\n\n[status_bar]\nx = 10\ny = 20\n\n[[custom_phrases]]\ncode = \"dz\"\ntext = \"地址\"\n";
 
@@ -103,5 +141,37 @@ mod tests {
         assert_eq!(config.custom_phrases[0].code, "dz");
         assert!(import_settings(HERE, "[general]\npage_size = \"多\"\n").is_err());
         assert!(import_settings(HERE, "不是 toml").is_err());
+    }
+
+    /// 两边都有的词不重复，本机独有的词留着；表头只抄导入那份一次。
+    #[test]
+    fn user_words_merge_keeps_both_sides() {
+        let header = "# 青简用户词：词\t拼音\t词频，与主词库同格式\n";
+        let local = format!("{header}账套\tzhang tao\t100\n公司\tgong si\t100\n");
+        let imported = format!("{header}公司\tgong si\t100\n甲方\tjia fang\t100\n");
+        let merged = merge_user_words(&local, &imported);
+        assert_eq!(merged.matches("# 青简用户词").count(), 1);
+        assert_eq!(
+            merged.lines().filter(|line| !line.starts_with('#')).count(),
+            3
+        );
+        assert!(merged.contains("甲方\tjia fang\t100"));
+        assert!(merged.contains("账套\tzhang tao\t100"));
+        assert_eq!(merged.matches("公司").count(), 1);
+    }
+
+    /// 同一个词两边读音不一样时，用包里的那条（导入方是另一台电脑的最新状态）。
+    #[test]
+    fn user_words_merge_prefers_imported_reading() {
+        let merged = merge_user_words("重\tchong\t100\n", "重\tzhong\t100\n");
+        assert_eq!(merged, "重\tzhong\t100\n");
+    }
+
+    /// 一边没有词（新机器、或者从没造过词）时另一边的词原样出来。
+    #[test]
+    fn user_words_merge_with_empty_side() {
+        assert_eq!(merge_user_words("", "重\tzhong\t100\n"), "重\tzhong\t100\n");
+        assert_eq!(merge_user_words("重\tzhong\t100\n", ""), "重\tzhong\t100\n");
+        assert_eq!(merge_user_words("", ""), "");
     }
 }

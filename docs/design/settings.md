@@ -236,7 +236,7 @@ Windows 和 Linux 以前没有这一页，这次都有了。
 |---|---|---|
 | 配置文件 | 在编辑器中打开 | 按钮 |
 | 配置文件 | 打开数据目录 | 按钮 |
-| 配置文件 | 导入、导出设置（ⓘ：不含短语、密钥与状态条位置） | 两个按钮；规则在 `qingjian_platform::export_settings` / `import_settings`：导出去掉 `[[custom_phrases]]`、`predict.api_key`、`status_bar.x/y`，导入保留本机这几项、先当配置读一遍，写之前把原配置存成 `config.before-import.toml` |
+| 配置文件 | 导入、导出设置（ⓘ：不含短语、密钥与状态条位置） | 两个按钮。导出一个 zip：`config.toml`（规则在 `qingjian_platform::export_settings`，去掉 `[[custom_phrases]]`、`predict.api_key`、`status_bar.x/y`）加两份用户词 `user-words.tsv` / `code_dicts/user-words.tsv`。导入先当配置读一遍，写之前把原配置存成 `config.before-import.toml`；用户词按词合并、包内为准（`merge_user_words`，形码那份方案不同时整份用包内的）。打包解包调系统 `zip` / `unzip`（Windows 用 `tar.exe`），不引入 zip crate。macOS 壳按 `user-words.tsv` 的快照重读学习数据，导入后下一键生效 |
 | 日志 | 详细日志（ⓘ：会记下敲的内容，排查完关掉） | 开关 `general.log_level` |
 | 日志 | 打开日志目录、打包到桌面 | 两个按钮排一行，做完的结果显示在按钮下面 |
 | 输入日志 | 记录输入日志（ⓘ：只存在这台电脑上） | 开关 `general.input_log` |

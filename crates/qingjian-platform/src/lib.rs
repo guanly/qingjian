@@ -29,8 +29,8 @@ pub use config::{
     KeyCombo, KeyHintMode, LEARNING_LANGUAGE_OFF, LayoutMode, LocalModel, LocalModelConfig,
     LogLevel, MAX_PAGE_SIZE, Modifiers, NumpadDigit, PAGE_KEY_OPTIONS, PageKeys, PreeditMode,
     Scheme, ShiftLetter, ShortcutConfig, SwitchKey, SwitchKeys, UI_LANGUAGE_DEFAULT,
-    UI_LANGUAGE_SYSTEM, UpdateChannel, UpdateConfig, ZhiyiTier, export_phrases, export_settings,
-    import_phrases, import_settings, scheme_label, scheme_name,
+    UI_LANGUAGE_SYSTEM, USER_WORDS_FILE, UpdateChannel, UpdateConfig, ZhiyiTier, export_phrases,
+    export_settings, import_phrases, import_settings, merge_user_words, scheme_label, scheme_name,
 };
 pub use error::ConfigError;
 pub use scheme::{SchemeMeta, SchemeSlot};
