@@ -144,6 +144,7 @@ macOS 的切换键是 Caps Lock，由系统决定，所以不显示「切换键�
 | 上屏第一个译词 | 录键（按住修饰键再按个数字，记修饰键） | `shortcut.translation` |
 | 上屏第二个译词 | 同上 | `shortcut.translation_second` |
 | 翻译选中文字 | 按键（组合键） | `shortcut.translate_selection` |
+| 造词（macOS） | 按键（组合键） | `shortcut.new_word` |
 | 按需 AI 联想（macOS、Windows） | 按键（组合键） | `shortcut.predict` |
 
 页底一个「恢复默认」按钮，下面用小字列出组句中固定、不能改的键（空格、1–9、回车、Esc 等），这是全页唯一保留的一段说明文字。

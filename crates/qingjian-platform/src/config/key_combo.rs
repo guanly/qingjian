@@ -45,6 +45,12 @@ impl KeyCombo {
         ..Self::TRANSLATE_DEFAULT
     };
 
+    /// 造词框缺省 ⌃⌥N（N 取 new word、也取「词」的 n）。⌃⌥ 组合在应用里几乎不用。
+    pub const NEW_WORD_DEFAULT: Self = Self {
+        key: 'n',
+        ..Self::TRANSLATE_DEFAULT
+    };
+
     pub const TRANSLATE_DEFAULT: Self = Self {
         modifiers: Modifiers {
             option: true,

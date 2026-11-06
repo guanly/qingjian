@@ -1,7 +1,7 @@
 ---
 title: Key reference
 order: 3
-description: "Qingjian's default keys on macOS, Windows and Linux: switching, picking, paging, moving the cursor, glosses, the candidate right-click menu, the symbol panel, AI features and prefix keys."
+description: "Qingjian's default keys on macOS, Windows and Linux: switching, picking, paging, moving the cursor, glosses, making words, the candidate right-click menu, the symbol panel, AI features and prefix keys."
 ---
 
 This page only lists keys. In the tables, `⌥` is Option, `⌘` is Command, `⌃` is Control and `⇧` is Shift; "—" means the platform has no such key.
@@ -82,6 +82,14 @@ Typing a letter closes the panel and continues typing. Details in [Punctuation, 
 | Pin / demote / delete a candidate | Right-click it, or Control-click | Right-click it | Not yet |
 
 These only work while typing pinyin. See [Glosses beside candidates](../learning/translation.md#Committing-the-gloss-directly) and [Typing habits](../personalize/habits.md#Candidate-right-click-menu).
+
+## Making words (macOS)
+
+| Action | Key |
+|---|---|
+| Open the word-making box (changeable in Settings) | `⌃⌥N` |
+
+It only opens when you aren't composing pinyin: while letters are still on the line the key belongs to the candidates, so pick one or press `Esc` first. See [Making words by hand](../personalize/habits.md).
 
 ## AI services
 

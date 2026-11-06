@@ -258,6 +258,12 @@ const LINKS: &[(PageId, &str, &str, &str)] = &[
         "翻译选中的文字",
     ),
     (
+        PageId::Shortcuts,
+        "shortcut.new_word",
+        "personalize/habits",
+        "手动造词",
+    ),
+    (
         PageId::Phrases,
         "phrases.new_phrase",
         "personalize/phrases",

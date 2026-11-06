@@ -77,6 +77,7 @@ impl Host {
         }
         self.punctuation_keys = config.shortcut.toggle_punctuation;
         self.predict_keys = config.shortcut.predict;
+        self.new_word_keys = config.shortcut.new_word;
         self.page_size = config.general.page_size();
         self.cloud_slots = config.predict.slots;
         self.page_keys = config.general.page_keys();

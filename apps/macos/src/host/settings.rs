@@ -104,10 +104,11 @@ impl Host {
     }
 
     /// 造词：弹框收一批中文词（一行一个），读音与形码编码由引擎算好，存完立刻落盘——用户马上要用。
+    /// 菜单「造词…」与 `[shortcut] new_word` 都走这里。
     ///
     /// 框是非模态的（`crate::dialog`），但开框会把本进程激活成前台应用，IMK 随即给这个窗口建输入会话，
     /// 那次 `activateServer` 不能撞在 `Host` 的借用上，所以开框这一步排到主队列，存的时候再借回来。
-    fn new_word(&mut self) {
+    pub fn new_word(&mut self) {
         let prefill = self
             .engine
             .recent_commits(1)

@@ -60,6 +60,7 @@ All settings are kept in one TOML text file, `config.toml`, with a note for ever
 | `[shortcut] clipboard` | 实验功能 (Experimental features) → Open clipboard | Default `"ctrl+alt+v"` on Windows, `"cmd+shift+v"` on macOS; at least two modifier keys (macOS, Windows) |
 | `[shortcut] translate_selection` | 快捷键 → 翻译选中文字 (Shortcuts → Translate selected text) | Such as `"alt+shift+t"` |
 | `[shortcut] predict` | 快捷键 → 按需 AI 联想 (Shortcuts → On-demand AI suggestions) | The full key combination; the settings window only changes the modifiers |
+| `[shortcut] new_word` | 快捷键 → 造词 (Shortcuts → Make a word, macOS) | Defaults to `"control+option+n"`; does nothing while composing |
 | The `[predict]` section | 云服务 (Cloud services) | See below |
 | `[general] input_log` | 高级 → 记录输入日志 (Advanced → Record input log) | `true` / `false` |
 

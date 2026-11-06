@@ -174,6 +174,9 @@ pub struct Host {
     /// 组句中按需联想的组合键（配置 `[shortcut] predict`）。
     pub predict_keys: KeyCombo,
 
+    /// 呼出造词框的组合键（配置 `[shortcut] new_word`）。
+    pub new_word_keys: KeyCombo,
+
     /// 在飞的按需联想请求序号：结果到了排在第一页最前面，自动联想的照旧补在末尾。
     manual_prediction: Option<u64>,
 

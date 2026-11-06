@@ -44,6 +44,9 @@ pub struct ShortcutConfig {
     /// 组句中按需调用 AI（缺省 Ctrl+Alt+J，macOS 是 ⌃⌥J）。
     pub predict: KeyCombo,
 
+    /// 呼出造词框（macOS 用，缺省 Ctrl+Alt+N，macOS 是 ⌃⌥N）。
+    pub new_word: KeyCombo,
+
     /// 呼出剪贴板面板（实验功能，Windows 用），见 [`super::ClipboardConfig`]。
     pub clipboard: KeyCombo,
 
@@ -88,6 +91,7 @@ impl Default for ShortcutConfig {
             translation_second,
             translate_selection,
             predict: KeyCombo::PREDICT_DEFAULT,
+            new_word: KeyCombo::NEW_WORD_DEFAULT,
             clipboard: KeyCombo::CLIPBOARD_DEFAULT,
             toggle_traditional: None,
             commit_candidate: CommitKey::SPACE,
@@ -153,6 +157,19 @@ mod tests {
         );
         assert!(toml::from_str::<ShortcutConfig>("extra_page_keys = ['ab']").is_err());
         assert!(toml::from_str::<ShortcutConfig>("toggle_punctuation = 'ctrl+unknown'").is_err());
+    }
+
+    #[test]
+    fn new_word_shortcut_defaults_and_round_trips() {
+        // 老配置没有这一项：缺省就带一个组合键，装了就能按
+        let missing: ShortcutConfig = toml::from_str("").unwrap();
+        assert_eq!(missing.new_word, KeyCombo::NEW_WORD_DEFAULT);
+        assert_eq!(missing.new_word.key_string(), "control+option+n");
+        let config: ShortcutConfig = toml::from_str("new_word = 'control+shift+w'").unwrap();
+        assert_eq!(config.new_word.key, 'w');
+        let restored: ShortcutConfig = toml::from_str(&toml::to_string(&config).unwrap()).unwrap();
+        assert_eq!(restored.new_word, config.new_word);
+        assert!(toml::from_str::<ShortcutConfig>("new_word = 'n'").is_err());
     }
 
     #[test]

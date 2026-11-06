@@ -315,6 +315,16 @@ impl QingjianInputController {
         {
             return self.translate_selection(client);
         }
+        // 造词键（`[shortcut] new_word`，缺省 ⌃⌥N）：弹造词框。组句中不认——这段拼音还没上屏，
+        // 造词框一开就停在半空；先上屏再按
+        let new_word = host::with(|h| h.new_word_keys).unwrap_or_default();
+        if pressed == new_word.modifiers
+            && typed.as_deref().and_then(|t| t.chars().next()) == Some(new_word.key)
+            && !host::with(|h| !h.engine.composition().is_empty()).unwrap_or(false)
+        {
+            host::with(|h| h.new_word());
+            return true;
+        }
         // 按需联想键（`[shortcut] predict`，缺省 ⌃⌥J）：组句中立刻请求一次，结果排在第一页最前面
         let predict = host::with(|h| h.predict_keys).unwrap_or_default();
         if pressed == predict.modifiers

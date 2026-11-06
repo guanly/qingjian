@@ -303,7 +303,7 @@ Core 按 `prediction::restates_question` 剔掉：与本地转出的问题相同
 | 云联想（勾选） | 写 `[predict] enabled`。配置开了但 Predictor 没接上（多半是没密钥）时不打勾，标题改成「云联想（启用失败，见日志）」 |
 | 模糊音 ▸ 九条（勾选） | 写 `[fuzzy]` 对应键 |
 | 符号面板… | 在光标处打开符号面板 |
-| 造词… | 打开造词框（`host/new_word.rs`）：一行一个词，拼音与形码编码自动算好 |
+| 造词… | 打开造词框（`host/new_word.rs`）：一行一个词，拼音与形码编码自动算好；不离开键盘时按 `[shortcut] new_word`（缺省 ⌃⌥N）走同一个入口 |
 | 设置… | 打开设置程序（`Qingjian.app/Contents/Applications/QingjianSettings.app`，见 [settings.md](settings.md)）；包里没有时退回旧版偏好设置 |
 | 旧版设置… | 打开下面这个原生偏好设置窗口，留一个版本作回退 |
 | 打开配置目录 | 访达打开 `~/Library/Application Support/Qingjian/`（`config.toml`、用户词、导入的词库与码表、主题），目录不存在时先建出来 |

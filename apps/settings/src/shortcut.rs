@@ -12,6 +12,8 @@ pub enum Shortcut {
     TranslationSecond,
     TranslateSelection,
     Predict,
+    /// 呼出造词框（macOS）。
+    NewWord,
     /// 呼出剪贴板面板（全局快捷键）。
     Clipboard,
     /// 辅码触发键（单个符号，不带修饰键）。
@@ -24,11 +26,12 @@ pub enum Shortcut {
 
 impl Shortcut {
     #[cfg(test)]
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Translation,
         Self::TranslationSecond,
         Self::TranslateSelection,
         Self::Predict,
+        Self::NewWord,
         Self::Clipboard,
         Self::AuxCodeKey,
         Self::CommitCandidate,
@@ -41,6 +44,7 @@ impl Shortcut {
             Self::TranslationSecond => tr("shortcut.translation_second"),
             Self::TranslateSelection => tr("shortcut.translate_selection"),
             Self::Predict => tr("shortcut.predict"),
+            Self::NewWord => tr("shortcut.new_word"),
             Self::Clipboard => tr("shortcut.clipboard"),
             Self::AuxCodeKey => tr("shortcut.aux_code_key"),
             Self::CommitCandidate => tr("shortcut.commit_candidate"),
@@ -55,6 +59,7 @@ impl Shortcut {
             Self::TranslationSecond => ("shortcut", "translation_second"),
             Self::TranslateSelection => ("shortcut", "translate_selection"),
             Self::Predict => ("shortcut", "predict"),
+            Self::NewWord => ("shortcut", "new_word"),
             Self::Clipboard => ("shortcut", "clipboard"),
             Self::AuxCodeKey => ("general", "aux_code_key"),
             Self::CommitCandidate => ("shortcut", "commit_candidate"),
@@ -66,7 +71,7 @@ impl Shortcut {
     pub fn prompt(self) -> &'static str {
         match self {
             Self::Translation | Self::TranslationSecond => tr("shortcut.prompt_digit"),
-            Self::TranslateSelection | Self::Predict | Self::Clipboard => {
+            Self::TranslateSelection | Self::Predict | Self::NewWord | Self::Clipboard => {
                 tr("shortcut.prompt_combo")
             }
             Self::AuxCodeKey => tr("shortcut.prompt_symbol"),
@@ -83,6 +88,7 @@ impl Shortcut {
             Self::TranslationSecond => digits(second),
             Self::TranslateSelection => combo_label(shortcut.translate_selection),
             Self::Predict => combo_label(shortcut.predict),
+            Self::NewWord => combo_label(shortcut.new_word),
             Self::Clipboard => combo_label(shortcut.clipboard),
             Self::AuxCodeKey => config.general.aux_code_key().to_string(),
             Self::CommitCandidate => shortcut.commit_candidate.label(),
@@ -108,6 +114,7 @@ impl Shortcut {
     fn combo(self, config: &Config) -> KeyCombo {
         match self {
             Self::Predict => config.shortcut.predict,
+            Self::NewWord => config.shortcut.new_word,
             Self::Clipboard => config.shortcut.clipboard,
             _ => config.shortcut.translate_selection,
         }
@@ -203,14 +210,14 @@ impl Shortcut {
                     modifiers,
                     key: key.to_ascii_lowercase(),
                 };
-                for other in [Self::TranslateSelection, Self::Predict] {
+                for other in [Self::TranslateSelection, Self::Predict, Self::NewWord] {
                     if other.combo(config) == combo {
                         return Err(tr_args("shortcut.clash", &[("other", &other.title())]));
                     }
                 }
                 Ok(combo.key_string())
             }
-            Self::TranslateSelection | Self::Predict => {
+            Self::TranslateSelection | Self::Predict | Self::NewWord => {
                 let key = match &press.key {
                     KeyCode::Character(text) => single(text).filter(|key| {
                         key.is_ascii_alphanumeric() || (self == Self::Predict && *key == '.')
@@ -464,6 +471,21 @@ mod tests {
         assert_eq!(
             Shortcut::Clipboard.accept(&press("j", ctrl_alt), &config),
             Err(format!("跟「{}」重复了", Shortcut::Predict.title()))
+        );
+    }
+
+    #[test]
+    fn new_word_recorder_takes_a_modified_letter() {
+        let config = Config::default();
+        assert_eq!(Shortcut::NewWord.config_key(), ("shortcut", "new_word"));
+        assert_eq!(
+            Shortcut::NewWord.accept(&press("N", alt()), &config),
+            Ok("option+n".to_owned())
+        );
+        assert!(
+            Shortcut::NewWord
+                .accept(&press("n", Held::default()), &config)
+                .is_err()
         );
     }
 

@@ -524,6 +524,8 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   「造词…」的菜单项在 `menubar/menu.rs`（可点条目只能放在 `OpenLogs` 之前那一组，放到下面两个纯展示条目之间会让 IMK 每次按键后停用菜单、打不了字），
   动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身是 `host/new_word.rs` 里的多行框
   （`dialog::prompt_area`：`NSTextView` 放进 `NSScrollView`，回车归换行，确定键因此是 ⌘↩）。
+  快捷键 `[shortcut] new_word`（缺省 ⌃⌥N，`Host::new_word_keys`）在 `imk/controller/mod.rs` 与翻译选中文字并排判定，
+  同样要求不在组句中——否则那段拼音会停在半空；命中后直接调同一个 `Host::new_word`。
   「打开配置目录」（`MenuAction::OpenConfigDir`，tag 8）让用户直接够到 `~/Library/Application Support/Qingjian/`：
   `paths::user_data_dir()` 会顺手把目录建出来再交给 `open`，`config.toml`、用户词、导入的词库与码表、主题都在这里。
   **输入法进程里不能 `runModal`**（2026-11-04，连着踩两次）：模态框把主线程关进模态 run loop，IMK 的按键派发跟着停摆，

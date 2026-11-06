@@ -106,6 +106,15 @@ pub fn shortcuts(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rende
             false,
         )?,
     ]);
+    if Feature::NewWord.here() {
+        rows.push(recorder(
+            ui,
+            page,
+            Shortcut::NewWord,
+            tr("shortcuts.new_word_info"),
+            false,
+        )?);
+    }
     if Feature::CloudRequestControls.here() {
         rows.push(recorder(
             ui,

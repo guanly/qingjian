@@ -168,6 +168,7 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             translate_keys: KeyCombo::TRANSLATE_DEFAULT,
             punctuation_keys: None,
             predict_keys: KeyCombo::PREDICT_DEFAULT,
+            new_word_keys: KeyCombo::NEW_WORD_DEFAULT,
             manual_prediction: None,
             candidate_translation: None,
             translation: None,

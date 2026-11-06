@@ -28,6 +28,9 @@ impl Settings {
             "translate_selection",
             defaults.translate_selection.key_string(),
         );
+        if Feature::NewWord.here() {
+            self.write("shortcut", "new_word", defaults.new_word.key_string());
+        }
         if Feature::CloudRequestControls.here() {
             self.write("shortcut", "predict", defaults.predict.key_string());
         }
