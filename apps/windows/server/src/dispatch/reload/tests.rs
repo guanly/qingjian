@@ -5,6 +5,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 use qingjian_core::Engine;
 use qingjian_dictionary::{Dictionary, import};
+use qingjian_learning::FrequencyLearner;
 use qingjian_platform::{Config, NumpadDigit};
 
 use super::CONFIG_POLL_INTERVAL;
@@ -180,4 +181,54 @@ fn dictionary_changes_do_not_retry_broken_config() {
     assert_eq!(router.config.page_size, 9);
     drop(router);
     std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// 设置程序导入了造词备份：用户词文件一变，引擎整份换一份学习数据（不用重启输入法），
+/// 内存里还没落盘的旧词跟着消失——磁盘上那份已经是合并后的结果。
+#[test]
+fn user_words_are_reread_when_the_file_changes() {
+    let dir =
+        std::env::temp_dir().join(format!("qingjian-user-words-reload-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let config_path = dir.join("config.toml");
+    std::fs::write(&config_path, "").unwrap();
+    modified_at(&config_path, 100);
+    let words = dir.join("user-words.tsv");
+    std::fs::write(&words, "# 青简用户词\n账套\tzhang tao\t100\n").unwrap();
+
+    let config = Config::load(&config_path).unwrap();
+    let learner = FrequencyLearner::from_path(dir.join("user.tsv")).unwrap();
+    let mut engine = Engine::new(Dictionary::default()).with_learner(Box::new(learner));
+    // 只在内存里造的词：重读之后应该不在
+    engine
+        .learn_word_with_reading("内存词", &["nei".into(), "cun".into(), "ci".into()])
+        .unwrap();
+    let mut router = Router::new(engine, RouterConfig::from(&config));
+    router.watch_config(
+        &config,
+        config_path.clone(),
+        dir.clone(),
+        DataDirs {
+            user_root: Some(dir.clone()),
+            ..DataDirs::default()
+        },
+    );
+
+    // 设置程序写入合并后的用户词
+    std::fs::write(
+        &words,
+        "# 青简用户词\n账套\tzhang tao\t100\n青简\tqing jian\t100\n",
+    )
+    .unwrap();
+    modified_at(&words, 400);
+    poll(&mut router);
+
+    let user_words = router.engine.learner_mut().user_words().unwrap();
+    assert_eq!(user_words.lookup(&["qing"], true)[0].text, "青简");
+    assert_eq!(user_words.lookup(&["zhang"], true)[0].text, "账套");
+    assert!(user_words.lookup(&["nei"], true).is_empty());
+
+    drop(router);
+    let _ = std::fs::remove_dir_all(&dir);
 }

@@ -127,6 +127,7 @@ impl Router {
         let code_files = dirs.code_snapshot();
         let code_word_files = dirs.code_word_snapshot();
         let dictionary_files = dirs.dict_snapshot();
+        let user_word_stamp = dirs.user_word_stamp();
         let updates = dirs.user_root.as_deref().map(|dir| {
             qingjian_update::Checker::new(dir.join(UPDATE_STATE_FILE), env!("CARGO_PKG_VERSION"))
         });
@@ -142,6 +143,7 @@ impl Router {
             applied_dictionaries: config.dictionaries.clone(),
             applied_aux_code: config.aux_code.clone(),
             dictionary_files,
+            user_word_stamp,
             applied_language: assembly::learning_language(config),
             update: config.update.clone(),
             updates,
@@ -168,6 +170,17 @@ impl Router {
             self.engine
                 .set_extra_dictionaries(reload.load_dictionaries());
             reload.dictionary_files = files;
+        }
+        // 用户词被别处换过（设置程序导入了造词备份）：重读学习数据，下一键就用上新词。
+        // 不先 flush——内存里那份旧的会把刚导入的合并结果整份盖回去。
+        let stamp = reload.dirs.user_word_stamp();
+        if stamp != reload.user_word_stamp {
+            reload.user_word_stamp = stamp;
+            if let Some(dir) = reload.dirs.user_root.clone() {
+                self.engine
+                    .set_learner(Box::new(assembly::load_learner(&dir)));
+                tracing::info!("用户词有变化，已重读学习数据");
+            }
         }
         // 用户主题文件改了：戳变了设置就不等，UI 线程重读主题当场换上（边改主题边看效果）
         if let Some(dir) = qingjian_platform::dirs::themes_dir() {

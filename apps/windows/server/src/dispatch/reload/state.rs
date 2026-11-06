@@ -57,6 +57,16 @@ impl DataDirs {
             .unwrap_or_default()
     }
 
+    /// 造词框造的那份用户词（`user-words.tsv`）的快照；还没造过词、没配目录为空。
+    pub(super) fn user_word_stamp(&self) -> Option<(Option<SystemTime>, u64)> {
+        let path = self
+            .user_root
+            .as_deref()?
+            .join(qingjian_platform::USER_WORDS_FILE);
+        let metadata = std::fs::metadata(path).ok()?;
+        Some((metadata.modified().ok(), metadata.len()))
+    }
+
     /// 用户 `dicts/` 的同一份快照；没配目录为空。
     pub(super) fn dict_snapshot(&self) -> Vec<(PathBuf, Option<SystemTime>, u64)> {
         self.user_dicts
@@ -104,6 +114,9 @@ pub(crate) struct ConfigReload {
 
     /// 最近加载的用户词库文件快照（路径、修改时间、长度）。
     pub(super) dictionary_files: Vec<(PathBuf, Option<SystemTime>, u64)>,
+
+    /// 读学习数据时 `user-words.tsv` 的快照：设置程序导入造词备份后，靠它发现文件被换过。
+    pub(super) user_word_stamp: Option<(Option<SystemTime>, u64)>,
 
     /// 当前的 `[update]`。
     pub(super) update: UpdateConfig,

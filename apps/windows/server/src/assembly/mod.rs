@@ -176,7 +176,7 @@ pub fn user_codes_dir(user_dir: Option<&Path>) -> Option<std::path::PathBuf> {
 }
 
 /// 读不了就退回只在内存里学，不拿空表覆盖用户文件。
-fn load_learner(dir: &Path) -> FrequencyLearner {
+pub(crate) fn load_learner(dir: &Path) -> FrequencyLearner {
     let path = dir.join("user.tsv");
     match FrequencyLearner::from_path(&path) {
         Ok(learner) => learner,
