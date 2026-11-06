@@ -1,7 +1,7 @@
 ---
 title: Changing keys
 order: 2
-description: "The 快捷键 (Shortcuts) page in Settings: paging keys, extra paging keys, the keys that commit the candidate or the letters, highlight keys, the shortcuts for full-width/half-width punctuation and for Simplified/Traditional, prefix letters for calculations and asking about characters, modifiers for glosses, shortcuts for translation and AI suggestions."
+description: "The 快捷键 (Shortcuts) page in Settings: paging keys, extra paging keys, the keys that commit the candidate or the letters, the raw-letters key (macOS), highlight keys, the shortcuts for full-width/half-width punctuation and for Simplified/Traditional, prefix letters for calculations and asking about characters, modifiers for glosses, shortcuts for translation and AI suggestions."
 ---
 
 All changeable keys are in 设置 → 快捷键 (Settings → Shortcuts), and changes take effect immediately. 恢复默认 (Restore defaults) at the bottom of the page resets the keys on this page, and below it are the keys that are fixed while typing pinyin and can't be changed. The full table of default keys is in the [Key reference](../getting-started/keys.md).
@@ -25,6 +25,16 @@ While typing pinyin, 上屏高亮候选 (Commit the highlighted candidate) is Sp
 - The two can't be the same key, nor a paging key or the auxiliary-code key; recording tells you which one it clashes with. For example, to make Enter commit the candidate, first record 上屏敲的字母 as `Shift + Enter`, then record 上屏高亮候选 as Enter.
 - If Space or Enter is moved away and not given to the other item, pressing it while typing pinyin does nothing (no space or line break goes into the app). When you're not typing pinyin they go to the app as usual.
 - In Dachen Zhuyin, Space is the first tone and Enter and `Shift + Enter` keep their own rules; these two settings don't affect it.
+
+## Raw letters key (macOS)
+
+While typing pinyin, pressing `` ` `` (the key printed `·`) commits the letters in the buffer as typed — handy for the odd English word or letter run. Enter does the same, but in a chat box Enter sends the message, so this key is safer. It is in the 候选 (Candidates) group and can be re-recorded:
+
+- One symbol key, no modifiers. Letters, digits and the apostrophe are out (they type while you input pinyin), and so is `-` (it starts direct English); paging keys and the auxiliary-code key are refused.
+- Enter still commits the letters as typed; this item only adds a second, handier key. Changing it doesn't affect Enter.
+- Outside a composition it's an ordinary symbol, converted like any other — the default backtick gives the middle dot `·`; question and calculation modes are unaffected.
+
+The setting is `[shortcut] raw_letters`.
 
 ## Highlight keys (macOS, Windows)
 

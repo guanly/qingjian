@@ -22,11 +22,13 @@ pub enum Shortcut {
     CommitCandidate,
     /// 组句时原样上屏敲的字母的键。
     CommitRaw,
+    /// 组句时上屏原始字母的另一个键（macOS，单个符号键）。
+    RawLetters,
 }
 
 impl Shortcut {
     #[cfg(test)]
-    pub const ALL: [Self; 9] = [
+    pub const ALL: [Self; 10] = [
         Self::Translation,
         Self::TranslationSecond,
         Self::TranslateSelection,
@@ -36,6 +38,7 @@ impl Shortcut {
         Self::AuxCodeKey,
         Self::CommitCandidate,
         Self::CommitRaw,
+        Self::RawLetters,
     ];
 
     pub fn title(self) -> &'static str {
@@ -49,6 +52,7 @@ impl Shortcut {
             Self::AuxCodeKey => tr("shortcut.aux_code_key"),
             Self::CommitCandidate => tr("shortcut.commit_candidate"),
             Self::CommitRaw => tr("shortcut.commit_raw"),
+            Self::RawLetters => tr("shortcut.raw_letters"),
         }
     }
 
@@ -64,6 +68,7 @@ impl Shortcut {
             Self::AuxCodeKey => ("general", "aux_code_key"),
             Self::CommitCandidate => ("shortcut", "commit_candidate"),
             Self::CommitRaw => ("shortcut", "commit_raw"),
+            Self::RawLetters => ("shortcut", "raw_letters"),
         }
     }
 
@@ -76,6 +81,7 @@ impl Shortcut {
             }
             Self::AuxCodeKey => tr("shortcut.prompt_symbol"),
             Self::CommitCandidate | Self::CommitRaw => tr("shortcut.prompt_commit"),
+            Self::RawLetters => tr("shortcut.prompt_symbol"),
         }
     }
 
@@ -93,6 +99,7 @@ impl Shortcut {
             Self::AuxCodeKey => config.general.aux_code_key().to_string(),
             Self::CommitCandidate => shortcut.commit_candidate.label(),
             Self::CommitRaw => shortcut.commit_raw.label(),
+            Self::RawLetters => shortcut.raw_letters().to_string(),
         }
     }
 
@@ -187,6 +194,33 @@ impl Shortcut {
                     return Err(tr_args("shortcut.clash", &[("other", &other.title())]));
                 }
                 Ok(key.key_string())
+            }
+            // 只收一个符号键：组句时字母、数字、引号都在打字，`-` 留给英文直输段
+            Self::RawLetters => {
+                let key = match &press.key {
+                    KeyCode::Character(text) if modifiers.is_empty() => single(text),
+                    _ => None,
+                }
+                .ok_or(tr("shortcut.need_symbol"))?;
+                if !qingjian_platform::is_raw_letters_key(key) {
+                    let reason = if key == '-' {
+                        tr("shortcut.is_raw_mode_key")
+                    } else {
+                        tr("shortcut.letters_reserved")
+                    };
+                    return Err(reason.to_owned());
+                }
+                let (previous, next) = config.general.page_keys();
+                if key == previous
+                    || key == next
+                    || config.shortcut.extra_page_keys.step(key).is_some()
+                {
+                    return Err(tr_args("shortcut.is_page_key", &[("key", &key)]));
+                }
+                if key == config.general.aux_code_key() {
+                    return Err(tr_args("shortcut.is_aux_key", &[("key", &key)]));
+                }
+                Ok(key.to_string())
             }
             Self::Clipboard => {
                 let key = match &press.key {
@@ -485,6 +519,58 @@ mod tests {
         assert!(
             Shortcut::NewWord
                 .accept(&press("n", Held::default()), &config)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn raw_letters_recorder_takes_one_symbol() {
+        bamboo_slip_i18n::pin_locale("zh-Hans");
+        let config = Config::default();
+        assert_eq!(
+            Shortcut::RawLetters.config_key(),
+            ("shortcut", "raw_letters")
+        );
+        for good in ["`", "/", "\\"] {
+            assert_eq!(
+                Shortcut::RawLetters.accept(&press(good, Held::default()), &config),
+                Ok(good.to_owned()),
+                "{good:?}"
+            );
+        }
+        // 字母、数字、单引号打拼音时都在打字，`-` 留给英文直输段；带修饰键的也不收
+        for bad in ["a", "1", "'", "-"] {
+            assert!(
+                Shortcut::RawLetters
+                    .accept(&press(bad, Held::default()), &config)
+                    .is_err(),
+                "{bad:?}"
+            );
+        }
+        assert!(
+            Shortcut::RawLetters
+                .accept(&press("/", alt()), &config)
+                .is_err()
+        );
+        // 翻页键与辅码触发键录不进去
+        for taken in ["[", "]"] {
+            assert!(
+                Shortcut::RawLetters
+                    .accept(&press(taken, Held::default()), &config)
+                    .is_err(),
+                "{taken:?}"
+            );
+        }
+        assert!(
+            Shortcut::RawLetters
+                .accept(&press(";", Held::default()), &config)
+                .is_err()
+        );
+        let mut moved = Config::default();
+        moved.general.aux_code_key = "/".to_owned();
+        assert!(
+            Shortcut::RawLetters
+                .accept(&press("/", Held::default()), &moved)
                 .is_err()
         );
     }

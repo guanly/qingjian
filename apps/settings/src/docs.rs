@@ -199,6 +199,12 @@ const LINKS: &[(PageId, &str, &str, &str)] = &[
     ),
     (
         PageId::Shortcuts,
+        "shortcut.raw_letters",
+        "personalize/keys-settings",
+        "上屏原始字母的键（macOS）",
+    ),
+    (
+        PageId::Shortcuts,
         "shortcuts.highlight_keys",
         "personalize/keys-settings",
         "高亮移动键（macOS、Windows）",

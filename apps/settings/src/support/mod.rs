@@ -34,6 +34,8 @@ pub enum Feature {
     GridPageKeys,
     /// 组句时上屏候选与上屏字母的键可以换。
     CommitKeys,
+    /// 组句时上屏原始字母的键（macOS，一个符号键）可以换。
+    RawLetters,
     /// 呼出造词框的组合键。
     NewWord,
     ExtraPageKeys,
@@ -65,7 +67,7 @@ pub enum Feature {
 
 impl Feature {
     #[cfg(test)]
-    pub const ALL: [Self; 29] = [
+    pub const ALL: [Self; 30] = [
         Self::AuxCode,
         Self::Schemes,
         Self::SwitchKeys,
@@ -79,6 +81,7 @@ impl Feature {
         Self::HorizontalGrid,
         Self::GridPageKeys,
         Self::CommitKeys,
+        Self::RawLetters,
         Self::NewWord,
         Self::ExtraPageKeys,
         Self::HighlightKeys,
@@ -133,6 +136,8 @@ impl Feature {
             Self::GridPageKeys => [Yes, Yes, Todo],
             // macOS 的空格走 insertText、回车走 insertNewline:，要另接
             Self::CommitKeys => [Todo, Yes, Yes],
+            // macOS 回车走 insertNewline:（固定原样上屏），这里的符号键是顺手用的第二个入口
+            Self::RawLetters => [Yes, No, No],
             // 造词菜单与造词框只有 macOS 做了
             Self::NewWord => [Yes, No, No],
             Self::ExtraPageKeys => [Yes, Yes, Todo],
@@ -174,6 +179,7 @@ impl Feature {
             Self::HorizontalGrid => "横排时 ↑ / ↓ 展开成多行",
             Self::GridPageKeys => "横排时翻页键展开成多行",
             Self::CommitKeys => "上屏键自定义",
+            Self::RawLetters => "上屏原始字母的键",
             Self::NewWord => "造词快捷键",
             Self::ExtraPageKeys => "额外翻页键",
             Self::HighlightKeys => "高亮移动键",
@@ -212,6 +218,7 @@ impl Feature {
                 (PageId::Shortcuts, "shortcut.commit_candidate"),
                 (PageId::Shortcuts, "shortcut.commit_raw"),
             ],
+            Self::RawLetters => &[(PageId::Shortcuts, "shortcut.raw_letters")],
             Self::NewWord => &[(PageId::Shortcuts, "shortcut.new_word")],
             Self::HighlightKeys => &[(PageId::Shortcuts, "shortcuts.highlight_keys")],
             Self::ExtraCandidateNavigation => {

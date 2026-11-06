@@ -332,6 +332,7 @@ traditional_info = "Switches between Simplified and the Traditional form used la
 fixed_without_commit = "While composing: 1–9 pick a candidate, Esc clears, Tab accepts the sentence."
 commit_candidate_info = "Press while typing pinyin to commit the highlighted candidate"
 commit_raw_info = "Press while typing pinyin to commit the typed letters as is"
+raw_letters_info = "Press while typing pinyin to commit the typed letters as is, for the odd English word or letter run; one symbol key, by default the one printed ·"
 
 [shortcut]
 clipboard = "Open clipboard"
@@ -355,12 +356,14 @@ clash = "Same as “{other}”"
 digits = "{modifiers} + number"
 commit_candidate = "Commit highlighted candidate"
 commit_raw = "Commit typed letters"
+raw_letters = "Commit raw letters"
 prompt_commit = "Press Space, Return or a symbol key, optionally with Shift"
 shift_only = "Only Shift can be added: the input method doesn't receive Ctrl, Alt or Win combinations while composing"
 letters_reserved = "Letters, digits and the apostrophe are for typing and picking, so they can't commit"
 need_commit_key = "Needs Space, Return or a symbol key"
 is_page_key = "“{key}” is already a page key"
 is_aux_key = "“{key}” is already the auxiliary code trigger"
+is_raw_mode_key = "“-” starts direct English input (no-way); pick another symbol"
 
 [phrases]
 add = "Add…"

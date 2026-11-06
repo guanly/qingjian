@@ -147,11 +147,13 @@ impl QingjianInputController {
         let expression = composing && host::with(|h| h.engine.expression_mode()).unwrap_or(false);
         // 英文直输段（缓冲区里已有 `-` 这类字符）：可见字符一律追加，空格 / 回车整段原样上屏
         let raw = composing && host::with(|h| h.engine.raw_mode()).unwrap_or(false);
-        // 组句中敲 `（键帽上印的是 ·）：把缓冲区里的字母原样上屏，临时打英文 / 字母串用。
-        // 回车在聊天框里是「发送」，Shift 加字母一次只出一个，都没有这个键顺手。
-        // 不在组句里时它还是间隔号（见 `punctuation::Punctuation::convert`），问字与表达式模式不动；
-        // 把它配成翻页键（`[shortcut] extra_page_keys`）时以翻页为准
-        if composing && !question && !expression && page_step.is_none() && c == '`' {
+        // 组句中敲上屏原始字母的键（`[shortcut] raw_letters`，缺省是键帽上印着 · 的那个键）：
+        // 把缓冲区里的字母原样上屏，临时打英文 / 字母串用。回车同一步上屏，可聊天框里回车是「发送」，
+        // 这个键更顺手。不在组句里时它照旧出间隔号（见 `punctuation::Punctuation::convert`），
+        // 问字与表达式模式不动；把它配成翻页键（`[shortcut] extra_page_keys`）时以翻页为准
+        let raw_letters =
+            host::with(|h| h.raw_letters).unwrap_or(qingjian_platform::RAW_LETTERS_DEFAULT);
+        if composing && !question && !expression && page_step.is_none() && c == raw_letters {
             self.commit_raw(client);
             return true;
         }

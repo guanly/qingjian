@@ -83,6 +83,15 @@ pub fn shortcuts(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rende
             false,
         )?);
     }
+    if Feature::RawLetters.here() {
+        rows.push(recorder(
+            ui,
+            page,
+            Shortcut::RawLetters,
+            tr("shortcuts.raw_letters_info"),
+            false,
+        )?);
+    }
     rows.extend([
         recorder(
             ui,

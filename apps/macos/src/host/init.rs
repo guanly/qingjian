@@ -169,6 +169,7 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             punctuation_keys: None,
             predict_keys: KeyCombo::PREDICT_DEFAULT,
             new_word_keys: KeyCombo::NEW_WORD_DEFAULT,
+            raw_letters: qingjian_platform::RAW_LETTERS_DEFAULT,
             manual_prediction: None,
             candidate_translation: None,
             translation: None,

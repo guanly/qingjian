@@ -28,9 +28,10 @@ pub use config::{
     DEFAULT_THEME, DictionariesConfig, EmojiCount, FontSize, GeneralConfig, HighlightKeys,
     KeyCombo, KeyHintMode, LEARNING_LANGUAGE_OFF, LayoutMode, LocalModel, LocalModelConfig,
     LogLevel, MAX_PAGE_SIZE, Modifiers, NumpadDigit, PAGE_KEY_OPTIONS, PageKeys, PreeditMode,
-    Scheme, ShiftLetter, ShortcutConfig, SwitchKey, SwitchKeys, UI_LANGUAGE_DEFAULT,
-    UI_LANGUAGE_SYSTEM, USER_WORDS_FILE, UpdateChannel, UpdateConfig, ZhiyiTier, export_phrases,
-    export_settings, import_phrases, import_settings, merge_user_words, scheme_label, scheme_name,
+    RAW_LETTERS_DEFAULT, Scheme, ShiftLetter, ShortcutConfig, SwitchKey, SwitchKeys,
+    UI_LANGUAGE_DEFAULT, UI_LANGUAGE_SYSTEM, USER_WORDS_FILE, UpdateChannel, UpdateConfig,
+    ZhiyiTier, export_phrases, export_settings, import_phrases, import_settings,
+    is_raw_letters_key, merge_user_words, scheme_label, scheme_name,
 };
 pub use error::ConfigError;
 pub use scheme::{SchemeMeta, SchemeSlot};

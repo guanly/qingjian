@@ -62,6 +62,7 @@ description: 青简的全部设置保存在一个文本配置文件里：位置�
 | `[shortcut] translate_selection` | 快捷键 → 翻译选中文字 | 如 `"alt+shift+t"` |
 | `[shortcut] predict` | 快捷键 → 按需 AI 联想 | 完整的组合键，设置界面只改修饰键 |
 | `[shortcut] new_word` | 快捷键 → 造词（macOS） | 缺省 `"control+option+n"`；组句中不生效 |
+| `[shortcut] raw_letters` | 快捷键 → 上屏原始字母（macOS） | 一个符号键，缺省 `` "`" ``（键帽上印的是 `·`）；只认符号，写空格、回车或 `-` 都按缺省读 |
 | `[predict]` 一节 | 云服务 | 见下文 |
 | `[general] input_log` | 高级 → 记录输入日志 | `true` / `false` |
 

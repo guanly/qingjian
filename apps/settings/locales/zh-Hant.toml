@@ -306,6 +306,7 @@ traditional_info = "在簡體與上次用的繁體字形之間切換"
 fixed_without_commit = "組句時：1–9 選詞，Esc 清空，Tab 採用整句。"
 commit_candidate_info = "打拼音時按它上屏高亮的候選"
 commit_raw_info = "打拼音時按它把敲的字母原樣上屏"
+raw_letters_info = "打拼音時按它把敲的字母原樣上屏，臨時打英文、字母串用；只收一個符號鍵，缺省是鍵帽上印著 · 的那個鍵"
 
 [shortcut]
 translation = "上屏第一個譯詞"
@@ -326,12 +327,14 @@ clash = "跟「{other}」重複了"
 digits = "{modifiers} + 序號"
 commit_candidate = "上屏高亮候選"
 commit_raw = "上屏敲的字母"
+raw_letters = "上屏原始字母"
 prompt_commit = "按空格、回車或符號鍵，可加 Shift"
 shift_only = "只能加 Shift：組句時輸入法收不到 Ctrl、Alt、Win 組合"
 letters_reserved = "字母、數字與單引號用來打字和選詞，不能當上屏鍵"
 need_commit_key = "要空格、回車或一個符號鍵"
 is_page_key = "「{key}」已經是翻頁鍵"
 is_aux_key = "「{key}」已經是輔碼觸發鍵"
+is_raw_mode_key = "「-」留給英文直輸段（no-way 這樣打），換一個符號"
 
 [phrases]
 add = "新增…"

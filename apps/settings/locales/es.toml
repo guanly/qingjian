@@ -306,6 +306,7 @@ traditional_info = "Alterna entre simplificado y la forma tradicional usada la �
 fixed_without_commit = "Al componer: 1–9 eligen un candidato, Esc borra y Tab acepta la frase."
 commit_candidate_info = "Púlsala al escribir pinyin para confirmar el candidato resaltado"
 commit_raw_info = "Púlsala al escribir pinyin para confirmar las letras tecleadas tal cual"
+raw_letters_info = "Púlsala al escribir pinyin para confirmar las letras tecleadas tal cual, para una palabra o cadena en inglés; una sola tecla de símbolo, por defecto la que lleva ·"
 
 [shortcut]
 translation = "Confirmar la primera traducción"
@@ -326,12 +327,14 @@ clash = "Igual que «{other}»"
 digits = "{modifiers} + número"
 commit_candidate = "Confirmar el candidato resaltado"
 commit_raw = "Confirmar las letras tecleadas"
+raw_letters = "Confirmar letras sin procesar"
 prompt_commit = "Pulsa Espacio, Intro o una tecla de símbolo, con Mayús si quieres"
 shift_only = "Solo se puede añadir Mayús: al componer, el método de entrada no recibe combinaciones con Ctrl, Alt o Win"
 letters_reserved = "Las letras, los números y el apóstrofo sirven para escribir y elegir, así que no pueden confirmar"
 need_commit_key = "Hace falta Espacio, Intro o una tecla de símbolo"
 is_page_key = "«{key}» ya es una tecla de página"
 is_aux_key = "«{key}» ya es la tecla de activación del código auxiliar"
+is_raw_mode_key = "«-» inicia la entrada directa en inglés (no-way); elige otro símbolo"
 
 [phrases]
 add = "Añadir…"

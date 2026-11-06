@@ -306,6 +306,7 @@ traditional_info = "簡体字と、前回使った繁体字の字形を切り替
 fixed_without_commit = "入力中：1–9 で候補を選択、Esc で消去、Tab で文を採用。"
 commit_candidate_info = "ピンイン入力中に押すとハイライトした候補を確定します"
 commit_raw_info = "ピンイン入力中に押すと打った英字をそのまま確定します"
+raw_letters_info = "ピンイン入力中に押すと打った英字をそのまま確定します。英単語や英字列の一時入力用で、記号キー 1 つだけ、既定は · が印字されたキーです"
 
 [shortcut]
 translation = "1 つ目の訳語を確定"
@@ -326,12 +327,14 @@ clash = "「{other}」と重複しています"
 digits = "{modifiers} + 番号"
 commit_candidate = "ハイライトした候補を確定"
 commit_raw = "打った英字を確定"
+raw_letters = "生の英字を確定"
 prompt_commit = "スペース、Enter、記号キーを押してください（Shift 併用可）"
 shift_only = "Shift しか付けられません：入力中、入力メソッドは Ctrl・Alt・Win の組み合わせを受け取れません"
 letters_reserved = "英字、数字、アポストロフィは入力と候補選択に使うため、確定キーにはできません"
 need_commit_key = "スペース、Enter、記号キーのいずれかが必要です"
 is_page_key = "「{key}」はすでにページ送りキーです"
 is_aux_key = "「{key}」はすでに補助コードのトリガーキーです"
+is_raw_mode_key = "「-」は英字の直接入力（no-way など）に使うので、別の記号にしてください"
 
 [phrases]
 add = "追加…"

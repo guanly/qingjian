@@ -25,7 +25,7 @@ Typing punctuation halfway through some pinyin has one of two effects, set by �
 Either way:
 
 - `'` is the syllable separator (`xi'an`).
-- On macOS, `` ` `` (the key printed `·`) doesn't add punctuation: it commits the letters you typed as they are (type `kubectl` and press it to enter `kubectl`), see [Keys](../getting-started/keys.md#while-typing-pinyin); only outside a composition does it produce the middle dot 「·」.
+- On macOS, the raw-letters key (`` ` `` by default, the key printed `·`; changeable in Settings) doesn't add punctuation: it commits the letters you typed as they are (type `kubectl` and press it to enter `kubectl`), see [Keys](../getting-started/keys.md#while-typing-pinyin); only outside a composition does it produce the middle dot 「·」.
 - Symbols that don't turn full-width (`-` `/` `@`) always enter direct English input.
 - Typing an email: after `qingjian@` the candidates list full addresses at common providers (qq.com, 163.com, gmail.com…); type `g` and only gmail.com is left. Move the highlight onto an address with the arrow keys and press `Space`, or click it, to enter that address without a trailing space; `Enter` still enters what you typed.
 - To follow a candidate with half-width punctuation, switch to English mode first, or set Chinese punctuation to half-width.

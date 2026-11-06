@@ -177,6 +177,9 @@ pub struct Host {
     /// 呼出造词框的组合键（配置 `[shortcut] new_word`）。
     pub new_word_keys: KeyCombo,
 
+    /// 组句时上屏原始字母的键（配置 `[shortcut] raw_letters`，缺省反引号）。
+    pub raw_letters: char,
+
     /// 在飞的按需联想请求序号：结果到了排在第一页最前面，自动联想的照旧补在末尾。
     manual_prediction: Option<u64>,
 

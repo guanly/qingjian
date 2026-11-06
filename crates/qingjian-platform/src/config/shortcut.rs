@@ -60,6 +60,20 @@ pub struct ShortcutConfig {
 
     /// 组句时原样上屏敲的字母的键（Windows、Linux 用），缺省不带 Shift 的回车。
     pub commit_raw: CommitKey,
+
+    /// 组句时把敲的字母原样上屏的另一个键（macOS 用）：只认一个符号键，缺省 [`RAW_LETTERS_DEFAULT`]。
+    /// macOS 的回车同一步上屏、走的是系统命令那条路，换不了；这个键是顺手用的第二个入口，
+    /// 免得在聊天框里为了打一串字母回车把半句话发出去。空格、回车与 `-` 退回缺省。
+    pub raw_letters: CommitKey,
+}
+
+/// `[shortcut] raw_letters` 的缺省：反引号，键帽上印的是中间点。
+pub const RAW_LETTERS_DEFAULT: char = '`';
+
+/// 能当上屏原始字母键的字符：可见的 ASCII 符号，不是字母、数字、单引号，
+/// 也不是 `-`（组句时它进英文直输段，见 `Engine::raw_mode`）。
+pub fn is_raw_letters_key(key: char) -> bool {
+    key.is_ascii_graphic() && !key.is_ascii_alphanumeric() && key != '\'' && key != '-'
 }
 
 impl Default for ShortcutConfig {
@@ -96,11 +110,20 @@ impl Default for ShortcutConfig {
             toggle_traditional: None,
             commit_candidate: CommitKey::SPACE,
             commit_raw: CommitKey::ENTER,
+            raw_letters: CommitKey::Symbol(RAW_LETTERS_DEFAULT),
         }
     }
 }
 
 impl ShortcutConfig {
+    /// 上屏原始字母的键；配置里不是能当键的符号（空格、回车、字母、翻页用的 `-`）时退回缺省。
+    pub fn raw_letters(&self) -> char {
+        match self.raw_letters {
+            CommitKey::Symbol(key) if is_raw_letters_key(key) => key,
+            _ => RAW_LETTERS_DEFAULT,
+        }
+    }
+
     /// 两个上屏键；配成同一个键时退回缺省，不做一半（读手改的配置用，设置程序录的时候就不让撞）。
     pub fn commit_keys(&self) -> CommitKeys {
         if self.commit_candidate == self.commit_raw {
@@ -157,6 +180,34 @@ mod tests {
         );
         assert!(toml::from_str::<ShortcutConfig>("extra_page_keys = ['ab']").is_err());
         assert!(toml::from_str::<ShortcutConfig>("toggle_punctuation = 'ctrl+unknown'").is_err());
+    }
+
+    #[test]
+    fn raw_letters_defaults_to_the_backtick_and_falls_back_when_hand_edited() {
+        // 老配置没有这一项：缺省就是键帽上印着 · 的那个键
+        let missing: ShortcutConfig = toml::from_str("").unwrap();
+        assert_eq!(missing.raw_letters, CommitKey::Symbol('`'));
+        assert_eq!(missing.raw_letters(), '`');
+
+        let moved: ShortcutConfig = toml::from_str("raw_letters = '\\'").unwrap();
+        assert_eq!(moved.raw_letters(), '\\');
+        let restored: ShortcutConfig = toml::from_str(&toml::to_string(&moved).unwrap()).unwrap();
+        assert_eq!(restored.raw_letters(), '\\');
+
+        // 写成一个正当的上屏键（空格 / 回车）或 `-`（组句时进英文直输段）：退回缺省；
+        // 字母数字这类压根不是一个键的值读不进来，整个配置报错（与 KeyCombo 一样）
+        for bad in ["enter", "shift+space", "-"] {
+            let source = format!("raw_letters = {bad:?}");
+            let config: ShortcutConfig = toml::from_str(&source).unwrap();
+            assert_eq!(config.raw_letters(), RAW_LETTERS_DEFAULT, "{bad:?}");
+        }
+        for bad in ["a", "1", "", "中"] {
+            let source = format!("raw_letters = {bad:?}");
+            assert!(
+                toml::from_str::<ShortcutConfig>(&source).is_err(),
+                "{bad:?}"
+            );
+        }
     }
 
     #[test]

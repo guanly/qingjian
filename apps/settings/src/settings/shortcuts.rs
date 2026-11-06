@@ -53,6 +53,9 @@ impl Settings {
         if Feature::ToggleTraditional.here() {
             self.write("shortcut", "toggle_traditional", "");
         }
+        if Feature::RawLetters.here() {
+            self.write("shortcut", "raw_letters", defaults.raw_letters.key_string());
+        }
         if Feature::CommitKeys.here() {
             self.write(
                 "shortcut",

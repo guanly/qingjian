@@ -306,6 +306,7 @@ traditional_info = "Đổi giữa giản thể và kiểu phồn thể dùng l�
 fixed_without_commit = "Khi đang soạn: 1–9 chọn gợi ý, Esc xóa, Tab dùng cả câu."
 commit_candidate_info = "Nhấn khi gõ pinyin để đưa gợi ý đang sáng lên"
 commit_raw_info = "Nhấn khi gõ pinyin để đưa nguyên các chữ cái đã gõ lên"
+raw_letters_info = "Nhấn khi gõ pinyin để đưa nguyên các chữ cái đã gõ lên, dùng khi cần gõ từ hay chuỗi tiếng Anh; chỉ một phím ký hiệu, mặc định là phím in dấu ·"
 
 [shortcut]
 translation = "Đưa lên bản dịch thứ nhất"
@@ -326,12 +327,14 @@ clash = "Trùng với “{other}”"
 digits = "{modifiers} + số thứ tự"
 commit_candidate = "Đưa lên gợi ý đang sáng"
 commit_raw = "Đưa lên chữ cái đã gõ"
+raw_letters = "Đưa nguyên chữ cái lên"
 prompt_commit = "Nhấn Space, Enter hoặc một phím ký hiệu, có thể kèm Shift"
 shift_only = "Chỉ được kèm Shift: khi đang soạn, bộ gõ không nhận được tổ hợp Ctrl, Alt, Win"
 letters_reserved = "Chữ cái, chữ số và dấu nháy đơn dùng để gõ và chọn từ, không làm phím đưa lên được"
 need_commit_key = "Cần Space, Enter hoặc một phím ký hiệu"
 is_page_key = "“{key}” đã là phím lật trang"
 is_aux_key = "“{key}” đã là phím kích hoạt mã phụ"
+is_raw_mode_key = "“-” dành cho đoạn gõ thẳng tiếng Anh (no-way), hãy chọn ký hiệu khác"
 
 [phrases]
 add = "Thêm…"

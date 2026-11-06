@@ -365,6 +365,7 @@ Common Crawl、CSL、SkyPile、C4 的统计），可按 GPL-3.0-or-later 使用�
 
 上屏键 `[shortcut] commit_candidate` / `commit_raw`（`config::commit_key`）：`CommitKey` 只收空格、回车（可带 Shift）与一个符号键——Windows 的 TSF DLL 组句时只把不带 Ctrl / Alt / Win 的键送进 Server；
 `CommitKeys::route` 给 Windows 与 Linux 的 Router 共用，缺省的那个键返回 `Keep` 走原路径（直输段、只剩一个 `?` 的细节都在那里），换过的键直接上屏，让出去又没配的空格 / 回车组句中吃掉；注音不经过它，macOS 还没接。
+macOS 的第二个原样上屏键走 `[shortcut] raw_letters`（同一个 `CommitKey`，只认符号那支，缺省反引号，`ShortcutConfig::raw_letters()` 把空格 / 回车 / `-` / 写坏的值退回缺省）：回车在 macOS 走 `insertNewline:`，换不了，所以另给一个顺手的键。
 设置的导出导入（`config::transfer`，设置程序「高级」页用）：导出去掉 `[[custom_phrases]]`、`predict.api_key`、`status_bar.x/y`，导入时这几项保留本机原值，合并前后都当 `Config` 读一遍；短语的导入导出在 `config::phrases`，导入不收整份配置、读不成 TOML 时按 Rime `custom_phrase.txt` 的 TSV 读。
 
 

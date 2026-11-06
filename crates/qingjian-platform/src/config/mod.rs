@@ -75,7 +75,7 @@ pub use phrases::{export_phrases, import_phrases};
 pub use preedit_mode::PreeditMode;
 pub use scheme::{Scheme, scheme_label, scheme_name};
 pub use shift_letter::ShiftLetter;
-pub use shortcut::ShortcutConfig;
+pub use shortcut::{RAW_LETTERS_DEFAULT, ShortcutConfig, is_raw_letters_key};
 pub use status_bar::StatusBarConfig;
 pub use switch_key::{SwitchKey, SwitchKeys};
 pub use transfer::{USER_WORDS_FILE, export_settings, import_settings, merge_user_words};
@@ -200,6 +200,9 @@ translation_second = "shift+option"
 # 把应用里选中的文字译成学习语言（要开着云服务）：译文先出现在候选窗口，回车替换选中的文字，Esc 保留原文
 # 修饰键 + 一个字母或数字，任意组合；避开 ⌘T 这类应用常用键
 translate_selection = "control+option+t"
+# 组句时把敲的字母原样上屏的键：一个符号键，缺省反引号（键帽上印的是中间点）。
+# 回车也原样上屏，这个键只是顺手（聊天框里回车是发送）；不能是字母、数字、单引号、翻页键与 -
+raw_letters = "`"
 "#
     };
 }

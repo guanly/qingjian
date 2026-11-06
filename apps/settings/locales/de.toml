@@ -306,6 +306,7 @@ traditional_info = "Wechselt zwischen vereinfacht und der zuletzt genutzten trad
 fixed_without_commit = "Beim Eingeben: 1–9 wählen einen Kandidaten, Esc leert, Tab übernimmt den Satz."
 commit_candidate_info = "Beim Pinyin-Tippen drücken, um den markierten Kandidaten zu übernehmen"
 commit_raw_info = "Beim Pinyin-Tippen drücken, um die getippten Buchstaben unverändert zu übernehmen"
+raw_letters_info = "Beim Pinyin-Tippen drücken, um die getippten Buchstaben unverändert zu übernehmen, etwa für ein englisches Wort; genau eine Symboltaste, standardmäßig die mit ·"
 
 [shortcut]
 translation = "Erste Übersetzung übernehmen"
@@ -326,12 +327,14 @@ clash = "Gleich wie „{other}“"
 digits = "{modifiers} + Nummer"
 commit_candidate = "Markierten Kandidaten übernehmen"
 commit_raw = "Getippte Buchstaben übernehmen"
+raw_letters = "Rohe Buchstaben übernehmen"
 prompt_commit = "Leertaste, Eingabe oder eine Symboltaste drücken, auch mit Shift"
 shift_only = "Nur Shift ist möglich: Beim Eingeben bekommt die Eingabemethode keine Kombinationen mit Strg, Alt oder Win"
 letters_reserved = "Buchstaben, Ziffern und Apostroph dienen zum Tippen und Wählen und können nicht übernehmen"
 need_commit_key = "Es wird Leertaste, Eingabe oder eine Symboltaste gebraucht"
 is_page_key = "„{key}“ ist schon eine Blättertaste"
 is_aux_key = "„{key}“ ist schon die Auslösetaste für den Hilfscode"
+is_raw_mode_key = "„-“ startet die englische Direkteingabe (no-way); nimm ein anderes Symbol"
 
 [phrases]
 add = "Hinzufügen …"
