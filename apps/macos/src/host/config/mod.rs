@@ -64,6 +64,10 @@ impl Host {
         self.engine
             .set_context_memory(config.model.context_memory_seconds);
         self.engine.set_learning(config.general.learning);
+        // 句首不计入的词：语料里常出现在句首的词（条目名、页面标题）句首概率被抬得过高时列在配置里，
+        // 只在句首按词频算。改了词表 Engine 自己清格子缓存
+        self.engine
+            .set_ignore_sentence_start(config.ranking.ignore_sentence_start);
         logging::set_level(config.general.log_level);
         self.translation_keys = config.shortcut.translation_keys();
         self.translate_keys = config.shortcut.translate_selection;

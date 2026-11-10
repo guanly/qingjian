@@ -34,6 +34,7 @@ cargo run --release -p qingjian-cli                     # 交互模式
 | `--english-mode` | 英文模式（输入法里是 Caps Lock 亮着）：字母不当拼音，候选来自英文词表 |
 | `--predict` | 强制开云联想并等结果打印；密钥来自配置或环境变量 `QINGJIAN_API_KEY` |
 | `--limit N` | 只显示前 N 个候选（缺省 9） |
+| `--ignore-sentence-start` | 句首不计入 `<s>`（配置 `[ranking] ignore_sentence_start` 同义）：所有词在句首只按词频排，句中照常 |
 
 ## 输出
 

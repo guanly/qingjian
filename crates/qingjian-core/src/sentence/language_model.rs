@@ -14,6 +14,12 @@ pub trait LanguageModel: Send {
         self.log_prob(previous, word)
     }
 
+    /// `log P(word)`：不看任何上文的一元概率。句首忽略 `<s>`（见 [`super::StartIgnored`]）要它。
+    /// 缺省 `None`：实现给不出一元时调用方按句首概率或词库词频兜底。
+    fn unigram_log_prob(&self, _word: &str) -> Option<f64> {
+        None
+    }
+
     /// 没接模型（什么词都不认识），「模型认不认识这个词」就没有意义。
     fn is_empty(&self) -> bool {
         false

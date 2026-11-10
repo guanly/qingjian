@@ -21,6 +21,14 @@ fn partial_file_keeps_other_defaults() {
     assert_eq!(config.predict.min_interval_ms, 3000);
 }
 
+/// 句首不计入：写成 true 读得进来，没写就是关（照常按语料的 `<s>` 排）。
+#[test]
+fn ranking_reads_the_ignore_sentence_start_switch() {
+    let config: Config = toml::from_str("[ranking]\nignore_sentence_start = true\n").unwrap();
+    assert!(config.ranking.ignore_sentence_start);
+    assert!(!Config::default().ranking.ignore_sentence_start);
+}
+
 /// 含章·知微下线后，老配置里的 `name = "zhiwei"` 按通变读，不让整个配置读失败。
 #[test]
 fn retired_zhiwei_model_reads_as_tongbian() {

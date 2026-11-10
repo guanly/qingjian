@@ -1,8 +1,10 @@
 //! 设置程序启动：配置文件写坏了也要打得开，下线的取值改写成现在的。
 
+use bamboo_slip::App;
 use qingjian_platform::{Config, LocalModel};
 
 use super::Settings;
+use crate::message::Message;
 
 fn temp_config(name: &str, text: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!("qingjian-settings-{name}-{}", std::process::id()));
@@ -39,6 +41,29 @@ fn retired_zhiwei_is_rewritten_on_start() {
         std::fs::read_to_string(&path)
             .unwrap()
             .contains("name = \"tongbian\"")
+    );
+    std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
+}
+
+/// 「句首不计入」：原来没有 `[ranking]` 段也能建出来，写进去的是布尔开关，来回切都落盘。
+#[test]
+fn the_ignore_sentence_start_switch_is_written_to_the_config() {
+    let path = temp_config("ignore-start", "");
+    let mut settings = Settings::load(path.clone());
+    assert!(!settings.config.ranking.ignore_sentence_start);
+    settings.update(Message::set("ranking", "ignore_sentence_start", true));
+    assert!(settings.config.ranking.ignore_sentence_start);
+    assert!(
+        std::fs::read_to_string(&path)
+            .unwrap()
+            .contains("ignore_sentence_start = true")
+    );
+    settings.update(Message::set("ranking", "ignore_sentence_start", false));
+    assert!(!settings.config.ranking.ignore_sentence_start);
+    assert!(
+        std::fs::read_to_string(&path)
+            .unwrap()
+            .contains("ignore_sentence_start = false")
     );
     std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
 }

@@ -460,6 +460,10 @@ fn build_engine(args: &Args) -> Result<Engine, CliError> {
     engine.set_traditional(config.general.traditional());
     engine.set_fuzzy(config.fuzzy);
     engine.set_mode_keys(config.shortcut.mode);
+    // 句首不计入：配置里的这一项与评测用的开关同一个入口
+    engine.set_ignore_sentence_start(
+        args.ignore_sentence_start || config.ranking.ignore_sentence_start,
+    );
     // `--shuangpin` 写的是 [general] scheme，off 就是全拼
     let custom = load_shuangpin_scheme(args)?;
     if let Some(scheme) = args.shuangpin.as_ref().filter(|_| custom.is_none()) {

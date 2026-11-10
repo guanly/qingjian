@@ -17,7 +17,7 @@ impl FieldId {
     /// 存进配置的那几个（短语的几个随卡片一起存）。
     pub const ALL: [Self; 3] = [Self::BaseUrl, Self::Model, Self::ApiKey];
 
-    /// 配置文件 `[predict]` 里的键。
+    /// 对应配置文件里的键（`[predict]` 的几个）。
     pub fn key(self) -> &'static str {
         match self {
             Self::BaseUrl => "base_url",

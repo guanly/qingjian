@@ -21,4 +21,9 @@ impl LanguageModel for TrigramModel {
         let earlier = previous.and(earlier.and_then(|e| self.word(e)));
         Some(self.log10(earlier, previous, word) * std::f64::consts::LN_10)
     }
+
+    fn unigram_log_prob(&self, word: &str) -> Option<f64> {
+        // 没有前文就是一元，走同一条 ARPA 回退
+        self.log_prob_trigram(None, None, word)
+    }
 }

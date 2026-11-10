@@ -246,6 +246,8 @@ impl Router {
         self.reload_schemes(config);
         self.engine.set_traditional(config.general.traditional());
         self.engine.set_learning(config.general.learning);
+        self.engine
+            .set_ignore_sentence_start(config.ranking.ignore_sentence_start);
         self.engine.set_mode_keys(config.shortcut.mode);
         self.engine
             .set_aux_code_key(config.general.aux_code_key(), config.general.page_keys());

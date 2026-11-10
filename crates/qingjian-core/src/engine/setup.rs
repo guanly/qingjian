@@ -14,7 +14,9 @@ use crate::engine::decoded::EngineDecoded;
 use crate::fuzzy::FuzzyRules;
 use crate::history::InputHistory;
 use crate::panel::PanelHistory;
-use crate::sentence::{Interpolation, LanguageModel, Personal, SearchLimits, SentenceScorer};
+use crate::sentence::{
+    Interpolation, LanguageModel, Personal, SearchLimits, SentenceScorer, StartIgnored,
+};
 use crate::shuangpin::{Layout, Scheme};
 use crate::traditional::{Traditional, TraditionalVariant};
 use qingjian_dictionary::{AuxCodeLookup, CodeTable, Dictionary, WordList};
@@ -484,9 +486,39 @@ impl Engine {
         self.forget_span_cache();
     }
 
+    /// 接语言模型。接着就包一层 [`sentence::StartIgnored`]：壳之后可以随时用
+    /// [`Self::set_ignore_sentence_start`] 开关它，不必重建模型。
     pub fn with_language_model(mut self, model: Box<dyn LanguageModel>) -> Self {
-        self.language_model = model;
+        self.language_model = if model.is_empty() {
+            model
+        } else {
+            Box::new(StartIgnored::new(
+                model,
+                std::sync::Arc::clone(&self.ignore_start),
+            ))
+        };
         self
+    }
+
+    /// 句首不计入 `<s>`（配置 `[ranking] ignore_sentence_start`）：打开后所有词在句首都按一元概率算，
+    /// 不看语料里「它常出现在句首」的统计；句中照常走 bigram / trigram。关掉就是照常。
+    ///
+    /// 只影响静态语言模型。个人 n-gram 里记的句首次数是用户自己打的，不在这里改。
+    pub fn set_ignore_sentence_start(&mut self, on: bool) {
+        if self
+            .ignore_start
+            .swap(on, std::sync::atomic::Ordering::Relaxed)
+            == on
+        {
+            return;
+        }
+        // 格子缓存的候选带上下文得分，开关一变就得重算
+        self.forget_span_cache();
+    }
+
+    /// 句首是不是不计入 `<s>`。
+    pub fn ignore_sentence_start(&self) -> bool {
+        self.ignore_start.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     /// 静态语言模型（没接就是 [`crate::sentence::NoLanguageModel`]）：评测工具拿它按 [`crate::sentence::segment_text`] 切汉字文本。

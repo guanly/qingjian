@@ -304,6 +304,12 @@ impl LanguageModel for BigramModel {
         };
         Some(probability.max(f64::MIN_POSITIVE).ln())
     }
+
+    fn unigram_log_prob(&self, word: &str) -> Option<f64> {
+        let id = self.word_id(word)?;
+        let unigram = f64::from(self.entries[id as usize].count) / self.total;
+        Some(unigram.max(f64::MIN_POSITIVE).ln())
+    }
 }
 
 #[cfg(test)]
@@ -327,6 +333,15 @@ mod tests {
         let alone = model.log_prob(Some("火星"), "想").unwrap();
         assert!((alone - (30.0_f64 / 101.0).ln()).abs() < 1e-9);
         assert_eq!(model.log_prob(Some("我"), "火星"), None);
+    }
+
+    /// 一元就是「前词不在模型里」时那一条：句首忽略 `<s>` 的词靠它。
+    #[test]
+    fn unigram_ignores_the_previous_word() {
+        let model = BigramModel::parse(UNIGRAM, BIGRAM).unwrap();
+        let alone = model.log_prob(Some("火星"), "想").unwrap();
+        assert_eq!(model.unigram_log_prob("想"), Some(alone));
+        assert_eq!(model.unigram_log_prob("火星"), None);
     }
 
     #[test]

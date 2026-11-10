@@ -98,6 +98,8 @@ impl Router {
         self.engine
             .set_shift_letter_compose(config.general.shift_letter.compose());
         self.engine.set_learning(config.general.learning);
+        self.engine
+            .set_ignore_sentence_start(config.ranking.ignore_sentence_start);
         self.engine.set_chinese_first(config.general.chinese_first);
         self.engine
             .set_spelling_correction(config.general.spelling_correction);

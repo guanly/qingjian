@@ -164,6 +164,10 @@ pub struct Engine {
     /// 整句转换的语言模型，缺省为 [`NoLanguageModel`]（退化成一元词频）。
     language_model: Box<dyn LanguageModel>,
 
+    /// 句首不计入 `<s>` 的开关（配置 `[ranking] ignore_sentence_start`）：与 [`sentence::StartIgnored`] 共享，
+    /// 配置改了下一次查词就生效，不用重建模型。
+    ignore_start: std::sync::Arc<std::sync::atomic::AtomicBool>,
+
     /// 整句路径的同步神经重打分器（字级 Transformer，查询里当场打分；CLI 评测用）。
     sentence_scorer: Option<Box<dyn SentenceScorer>>,
 
@@ -523,6 +527,7 @@ impl Engine {
             predictor: Box::new(NoPredictor),
             translation_predictor: None,
             language_model: Box::new(NoLanguageModel),
+            ignore_start: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
             sentence_scorer: None,
             rescorer: None,
             generative: false,

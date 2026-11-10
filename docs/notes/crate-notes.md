@@ -130,6 +130,8 @@ mac 存在 `Session::spelling`（`Host::follow_highlight`）、Windows / Linux �
 
 `Engine::discard_input` / `EngineSession::discard_input` 用于隐私能力变化时无痕清理输入，包括透传缓冲、学习链和暂存词汇曝光；`set_private` 只切换写入开关，保留已输入的组句。
 
+`sentence::StartIgnored` 是包在语言模型外面的一层：配置 `[ranking] ignore_sentence_start`（`RankingConfig`，缺省关）打开后，句首（`previous` 为 `None`）一律改问模型的 `unigram_log_prob`，句中照原样转给被包的模型；被包的模型不给一元时退回句首概率，开关不生效但不会更差。`Engine::with_language_model` 自动包上（`NoLanguageModel` 不包），开关是 `Arc<AtomicBool>` 与 Engine 共享，`set_ignore_sentence_start` 改了当场生效并清格子缓存，不用重建模型。个人 n-gram 里的 `<s>` 是用户自己打的，不跟着忽略。无前文的一元档在三个模型里的取法：`BigramModel` 用 `count/total`，`TrigramModel` 用 `log_prob_trigram(None, None, w)`，`MixedModel` 按同一权重插值。
+
 语音（`voice/`、`engine/voice.rs`）：`Transcriber` 是云端与本地离线识别的接口（非阻塞，`start` / `feed` 单声道 16 位 PCM / `finish` / `cancel`，`poll` 取 `TranscriptEvent`），现在只有 `NoTranscriber`；系统识别器留在各平台壳里。不论哪种识别方式，结果都经 `Engine::commit_voice` 上屏：繁体输出开着时转繁体，记输入历史、例句、输入日志（`InputSource::Voice`）与输入统计（词数按语言模型切，不算选词、不计键数时长），不记词频。设计见 `docs/design/voice-and-swipe.md`。
 
 滑行（`swipe/`）：`SwipeDecoder` 把轨迹（`SwipePoint`）、字母键几何（`SwipeKey`：中心与宽高）与候选词（`SwipeLexicon`：小写字母串 + log10 词频先验，按首尾字母分 26×26 桶；`from_dictionary` 把主词库各词音节连起来、同串词频相加，`from_word_list` 把英文词表的 Zipf×1000 除回去）解成字母串，按可能性排。`ShapeDecoder` 按理想路径与轨迹的形状差（48 点重采样逐点均方 + 字母按序覆盖的动态规划 + 轨迹偏离最远点 + 起终点，键宽归一）乘 5 再减去先验打分，起终点 1.1 键宽内的桶才比、按「先验 − 起终点差」上限从高到低提前停，回前 5；词表空或起终点附近没有词时退回 `CornerDecoder`（起点、终点、拐点最近的键，拐点是前后各 0.4 键宽一段方向差过 50°、连成一串取最急的）。解出的字母由平台像点按一样逐个进组句。设计见 `docs/design/voice-and-swipe.md`。
@@ -351,6 +353,7 @@ P2C 自由生成实验：`--eval-text <集> --eval-generate data/models/hanzhang
 （没有这两个文件就退化为一元词频整句）。数据由 `tools/corpus/parquet_to_text.py`（uv 脚本，HF parquet → 简体纯文本）加
 `cargo run --release -p qingjian-dict-convert -- bigram --phrases assets/lexicon/phrases.tsv --phrases assets/lexicon/domain_words.tsv --brand assets/lexicon/brand.tsv --brand assets/lexicon/mixed_words.tsv data/corpus/*.txt` 生成；语料在 `data/corpus/`（gitignore）。
 短语层不当 token 统计（分词时摘掉、统计完按成分合成一元 / 二元，短语得分等于原来两个词的路径，见 `bigram.rs` 模块注释），品牌词按给定次数写进一元与句首二元。
+三个 `LanguageModel` 实现都给 `unigram_log_prob`（Core 的 `sentence::StartIgnored` 要它）：二元取 `count / total`，三元取无前文那一档，`MixedModel` 两边按同一权重插值。
 
 `TrigramModel`（`trigram/`）：读知意输入法的词级三元模型 `zh.ngram`（`ZYNGRAM1` 格式，ARPA 回退、log10 量化成 i16，整文件 mmap），
 实现 Core 的 `sentence::PhraseModel`，选词重排里给整段候选打 ln P(候选 | 上文)（上文取最后一行末 12 字，按字束搜索切词，束宽 8、词最长 8 字），

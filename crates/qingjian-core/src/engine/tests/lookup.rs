@@ -642,3 +642,41 @@ fn many_whole_words_still_leave_room_for_single_chars() {
         "{all:?}"
     );
 }
+
+/// 句首被语料抬高到能翻盘的假模型：岩崎 在句首远高、延期 的一元更高；其余一概不认识。
+struct StartHeavy;
+
+impl LanguageModel for StartHeavy {
+    fn log_prob(&self, previous: Option<&str>, word: &str) -> Option<f64> {
+        match (previous, word) {
+            (None, "岩崎") => Some(-0.1),
+            (None, "延期") => Some(-2.0),
+            _ => None,
+        }
+    }
+
+    fn unigram_log_prob(&self, word: &str) -> Option<f64> {
+        match word {
+            "岩崎" => Some(-4.0),
+            "延期" => Some(-1.0),
+            _ => None,
+        }
+    }
+}
+
+/// 配置里的「句首不计入」：打开后句首全部按一元算，排序当场变；关掉回到语料的句首统计。
+#[test]
+fn ignoring_the_sentence_start_drops_a_word_that_only_leads_at_the_start() {
+    let sample = format!("{SAMPLE}岩崎\tyan qi\t3000\n延期\tyan qi\t3000\n");
+    let mut engine =
+        Engine::new(Dictionary::parse(&sample).unwrap()).with_language_model(Box::new(StartHeavy));
+    engine.set_input("yanqi");
+    assert_eq!(texts_of(&engine)[0], "岩崎");
+    assert!(!engine.ignore_sentence_start());
+    // 开关一变就得清格子缓存，否则候选还是上一轮的顺序
+    engine.set_ignore_sentence_start(true);
+    assert_eq!(texts_of(&engine)[0], "延期");
+    // 关回去就是照常
+    engine.set_ignore_sentence_start(false);
+    assert_eq!(texts_of(&engine)[0], "岩崎");
+}

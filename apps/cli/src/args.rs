@@ -198,6 +198,11 @@ pub struct Args {
     #[arg(long)]
     pub neural_async: bool,
 
+    /// 句首不计入（配置 `[ranking] ignore_sentence_start` 同义）：所有词在句首只按词频排，不计语料的
+    /// `<s>` 二元；句中照常
+    #[arg(long)]
+    pub ignore_sentence_start: bool,
+
     /// 逐键模式：把每个输入当作一键一键敲进去，每个前缀都查一次，打印每键各阶段耗时（性能测试用）
     #[arg(long)]
     pub typing: bool,

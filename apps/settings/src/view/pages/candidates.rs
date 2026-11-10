@@ -1,4 +1,4 @@
-//! 「候选」页：每页几个、译文、输出字形、拼音行声调，候选后面的 emoji / 颜文字 / 符号，排序（学习、本地整句模型），英文词。
+//! 「候选」页：每页几个、译文、输出字形、拼音行声调，候选后面的 emoji / 颜文字 / 符号，排序（学习、本地整句模型、句首不计入），英文词。
 
 use bamboo_slip::taffy::NodeId;
 use bamboo_slip::{RenderError, SettingRow, Stepper, Ui, group, section_title};
@@ -152,6 +152,15 @@ pub fn candidates(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Rend
             Some(tr("candidates.local_model_info")),
             ("model", "enabled"),
             config.model.enabled,
+            false,
+        )?,
+        toggle_info(
+            ui,
+            page,
+            tr("candidates.ignore_start"),
+            Some(tr("candidates.ignore_start_info")),
+            ("ranking", "ignore_sentence_start"),
+            config.ranking.ignore_sentence_start,
             false,
         )?,
     ];

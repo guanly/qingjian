@@ -22,6 +22,7 @@ mod optional_key_combo;
 mod page_keys;
 mod phrases;
 mod preedit_mode;
+mod ranking;
 mod retired;
 mod scheme;
 mod shift_letter;
@@ -73,6 +74,7 @@ pub use numpad_digit::NumpadDigit;
 pub use page_keys::PageKeys;
 pub use phrases::{export_phrases, import_phrases};
 pub use preedit_mode::PreeditMode;
+pub use ranking::RankingConfig;
 pub use scheme::{Scheme, scheme_label, scheme_name};
 pub use shift_letter::ShiftLetter;
 pub use shortcut::{RAW_LETTERS_DEFAULT, ShortcutConfig, is_raw_letters_key};
@@ -117,6 +119,9 @@ pub struct Config {
 
     /// 本地整句模型。
     pub model: LocalModelConfig,
+
+    /// 候选排序的手工调整（句首不计入的词）。
+    pub ranking: RankingConfig,
 
     /// 青简剪贴板（实验功能）。
     pub clipboard: ClipboardConfig,
@@ -431,6 +436,11 @@ name = "tongbian"
 zhiyi_tier = "balanced"
 # 应用读不到光标前的文字时，拿这个应用、这个输入框里刚打的字当前文；多少秒没打字就不算（0 表示一直算）
 context_memory_seconds = 60
+
+[ranking]
+# 句首不计入：语料里大量出现在句首的词（条目名、页面标题、页脚）在句首会被抬得比同音词高。
+# 打开后所有词在句首只按词频算，句中排序不受影响。只影响语料语言模型，个人学习记录不动
+ignore_sentence_start = false
 
 [predict]
 # 云联想：把光标附近的文本发到下面的接口，让模型补全整句 / 联想下文。默认关闭。

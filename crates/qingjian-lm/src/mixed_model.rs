@@ -54,6 +54,13 @@ impl LanguageModel for MixedModel {
             self.second.log_prob_trigram(earlier, previous, word),
         )
     }
+
+    fn unigram_log_prob(&self, word: &str) -> Option<f64> {
+        self.mix(
+            self.first.unigram_log_prob(word),
+            self.second.unigram_log_prob(word),
+        )
+    }
 }
 
 #[cfg(test)]

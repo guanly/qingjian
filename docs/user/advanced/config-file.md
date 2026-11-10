@@ -41,6 +41,7 @@ description: 青简的全部设置保存在一个文本配置文件里：位置�
 | `[model] enabled` | 候选 → 本地整句模型 | `true` / `false`（缺省） |
 | `[model] name`、`zhiyi_tier` | 实验功能 → 用哪个模型、知意的档位 | `name`：`tongbian`（缺省）、`zhiyi`，选了没下载的不用模型（旧的 `zhiwei` 按 `tongbian` 读）；`zhiyi_tier`：`saver`、`balanced`（缺省）、`accurate` |
 | `[model] context_memory_seconds` | 只在配置文件里 | 应用不给光标前文时，刚打的字算作前文的时长，缺省 60，0 为一直算 |
+| `[ranking] ignore_sentence_start` | 候选 → 句首不计入 | `true` / `false`（缺省）：打开后所有词在句首只按词频算，不看语料的 `<s>` 统计；句中不受影响 |
 | `[general] english_mode` | 中英文 → 英文模式 | `false` 为固定中文 |
 | `[shortcut] switch_mode` | 中英文 → 切换键 | 列表，如 `["shift", "control"]` |
 | `[general] default_english`、`remember_mode_per_app` | 中英文 → 默认英文模式、按应用记住中英模式 | `true` / `false` |

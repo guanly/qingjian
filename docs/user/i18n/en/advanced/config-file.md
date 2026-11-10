@@ -41,6 +41,7 @@ All settings are kept in one TOML text file, `config.toml`, with a note for ever
 | `[model] enabled` | 候选 → 本地整句模型 (Candidates → Local sentence model) | `true` / `false` (default) |
 | `[model] name`, `zhiyi_tier` | 实验功能 (Experimental features) → which model, Zhiyi's level | `name`: `tongbian` (default), `zhiyi`; if the chosen model isn't downloaded, no model is used (an old `zhiwei` reads as `tongbian`). `zhiyi_tier`: `saver`, `balanced` (default), `accurate` |
 | `[model] context_memory_seconds` | Configuration file only | When an app doesn't share the text before the cursor, how long what you just typed counts as context; default 60, 0 means always |
+| `[ranking] ignore_sentence_start` | Candidates → Ignore sentence start | `true` / `false` (default): every word ranks by word frequency alone at the start of a sentence, ignoring the corpus `<s>` statistics; elsewhere unchanged |
 | `[general] english_mode` | 中英文 → 英文模式 (Chinese/English → English mode) | `false` keeps it in Chinese |
 | `[shortcut] switch_mode` | 中英文 → 切换键 (Chinese/English → Switch key) | A list, such as `["shift", "control"]` |
 | `[general] default_english`, `remember_mode_per_app` | 中英文 → 默认英文模式, 按应用记住中英模式 (Chinese/English → Start in English mode, Remember mode per app) | `true` / `false` |
