@@ -80,20 +80,8 @@ impl InputMenu {
         ));
         menu.addItem(&action_item(
             mtm,
-            "旧版设置…",
-            Some(MenuAction::OpenPreferences),
-            &target,
-        ));
-        menu.addItem(&action_item(
-            mtm,
             "打开配置目录",
             Some(MenuAction::OpenConfigDir),
-            &target,
-        ));
-        menu.addItem(&action_item(
-            mtm,
-            "打开日志目录",
-            Some(MenuAction::OpenLogs),
             &target,
         ));
         // 可点的条目只能放在这一组：放到下面两个纯展示条目之间，IMK 会在每次按键后停用再新建会话，打不了字

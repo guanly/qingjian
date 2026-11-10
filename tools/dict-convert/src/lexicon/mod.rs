@@ -62,7 +62,7 @@ const MINOR_READING_CEILING: u32 = 4;
 /// 常用词表自带的读音与 LLM 标注不一致时，原表读音降到标注读音词频的几分之一保留（怎么打都找得到，但不抢首选）。
 pub(crate) const DISPUTED_READING_DIVISOR: u32 = 8;
 
-/// 领域词库的中文名（文件名主干 → 名称），写进 `.qj` 元数据，偏好设置「词库」页显示它。
+/// 领域词库的中文名（文件名主干 → 名称），写进 `.qj` 元数据，设置程序「词库」页显示它。
 const DOMAIN_NAMES: [(&str, &str); 11] = [
     ("animals", "动物"),
     ("automotive", "汽车"),

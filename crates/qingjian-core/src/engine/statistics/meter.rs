@@ -8,7 +8,7 @@ pub trait UsageMeter: Send {
     /// 落盘或整理。壳在停用输入法时调用，激活期间也定时调；失败只记日志。
     fn flush(&mut self) {}
 
-    /// 给偏好设置看的汇总。
+    /// 给诊断与命令行看的汇总。
     fn summary(&self) -> UsageSummary {
         UsageSummary::default()
     }

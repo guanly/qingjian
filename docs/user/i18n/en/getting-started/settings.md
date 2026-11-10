@@ -1,7 +1,7 @@
 ---
 title: The settings window
 order: 4
-description: "How to open Settings, search and the ⓘ notes, what each of the 12 pages controls, plus the macOS input menu and the legacy settings."
+description: "How to open Settings, search and the ⓘ notes, what each of the 12 pages controls, plus the macOS input menu and the Windows legacy settings."
 ---
 
 The settings window is currently in Chinese only. On this site, its labels are written in Chinese with an English translation in parentheses, so you can match them to what you see.
@@ -39,13 +39,15 @@ Settings that exist only on some platforms are hidden on the others; settings th
 
 ## The input method menu (macOS)
 
-Click the 中 / 英 item in the menu bar to open it: the cloud suggestions switch, the fuzzy pinyin submenu, the symbol panel (opens at the cursor), Settings, legacy Settings, Open Log Folder and the version number. New versions are also announced here.
+Click the input method icon in the menu bar to open it: the cloud suggestions switch, the fuzzy pinyin submenu, the symbol panel (opens at the cursor), Settings, Open Configuration Folder and the version number. New versions are also announced here. Logs are opened or bundled under Settings → Advanced.
 
 ## The taskbar icon (Windows)
 
 Right-click the 中 / 英 icon on the taskbar: switch to Chinese / English, full-width punctuation, show or hide the floating status bar, open the symbol panel, open Settings or legacy Settings. New versions are also announced here.
 
-## Legacy settings
+## Legacy settings (Windows)
 
-This version keeps the old settings window as a fallback; if the new one won't open or a setting doesn't take effect, use the old one: 旧版设置… (Legacy Settings…) in the macOS input method menu; 旧版设置… in the Windows taskbar icon's right-click menu, or 青简旧版设置 (Qingjian Legacy Settings) in the Start menu.
+Windows still keeps the old settings window as a fallback: 旧版设置… (Legacy Settings…) in the taskbar icon's right-click menu, or 青简旧版设置 (Qingjian Legacy Settings) in the Start menu.
 Both change the same settings. The legacy settings will be removed in a later version; if you find you need them, please [report it](../help/feedback.md).
+
+The macOS legacy settings have been removed: the input method menu now has only 设置… (Settings…).

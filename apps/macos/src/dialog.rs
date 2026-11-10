@@ -14,14 +14,12 @@ use objc2::runtime::{AnyObject, ProtocolObject};
 use objc2::{MainThreadMarker, MainThreadOnly, define_class, msg_send, sel};
 use objc2_app_kit::{
     NSApplication, NSApplicationActivationPolicy, NSBackingStoreType, NSBorderType, NSButton,
-    NSEventModifierFlags, NSFont, NSScrollView, NSTextField, NSTextView, NSView, NSWindow,
-    NSWindowDelegate, NSWindowStyleMask,
+    NSEventModifierFlags, NSFont, NSMenu, NSMenuItem, NSScrollView, NSTextField, NSTextView,
+    NSView, NSWindow, NSWindowDelegate, NSWindowStyleMask,
 };
 use objc2_foundation::{
     NSNotification, NSObject, NSObjectProtocol, NSPoint, NSRect, NSSize, NSString,
 };
-
-use crate::preferences::edit_menu;
 
 /// 内边距与控件尺寸。窗口不大，手动摆 frame 就够，不引 AutoLayout。
 const MARGIN: f64 = 20.0;
@@ -254,8 +252,8 @@ fn show(
         });
     });
 
-    // 与偏好设置窗口同一套：Accessory + 编辑主菜单（⌘C / ⌘V 靠它），再激活、置 key、落焦点
-    edit_menu::install(mtm);
+    // Accessory 激活策略 + 编辑主菜单（⌘C / ⌘V 靠它），再激活、置 key、落焦点
+    install_edit_menu(mtm);
     let app = NSApplication::sharedApplication(mtm);
     app.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
     #[allow(deprecated)]
@@ -353,4 +351,41 @@ impl DialogTarget {
         let this = mtm.alloc::<Self>().set_ivars(());
         unsafe { msg_send![super(this), init] }
     }
+}
+
+/// 给进程装一份只有「编辑」的主菜单。
+///
+/// 输入法是 `LSBackgroundOnly`，平时不显示菜单栏，也就没有主菜单；而 AppKit 文本框里的 ⌘X / ⌘C / ⌘V / ⌘A / ⌘Z
+/// 是主菜单里对应条目的快捷键，菜单不存在这些键就没人响应——框里的密钥、词表粘不进去就是这个原因。
+/// 菜单栏本身永远不会画出来（激活策略最多到 Accessory），只是让快捷键有地方落。重复调用只装一次。
+fn install_edit_menu(mtm: MainThreadMarker) {
+    let app = NSApplication::sharedApplication(mtm);
+    if app.mainMenu().is_some() {
+        return;
+    }
+    let edit = NSMenu::initWithTitle(mtm.alloc(), &NSString::from_str("编辑"));
+    for (title, action, key) in [
+        ("撤销", sel!(undo:), "z"),
+        ("重做", sel!(redo:), "Z"),
+        ("剪切", sel!(cut:), "x"),
+        ("拷贝", sel!(copy:), "c"),
+        ("粘贴", sel!(paste:), "v"),
+        ("全选", sel!(selectAll:), "a"),
+    ] {
+        // SAFETY: 这些都是 NSResponder 的标准编辑选择器，target 为空时沿响应链送到当前编辑的文本框
+        let item = unsafe {
+            NSMenuItem::initWithTitle_action_keyEquivalent(
+                mtm.alloc(),
+                &NSString::from_str(title),
+                Some(action),
+                &NSString::from_str(key),
+            )
+        };
+        edit.addItem(&item);
+    }
+    let main: Retained<NSMenu> = NSMenu::new(mtm);
+    let holder = NSMenuItem::new(mtm);
+    holder.setSubmenu(Some(&edit));
+    main.addItem(&holder);
+    app.setMainMenu(Some(&main));
 }

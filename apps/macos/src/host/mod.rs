@@ -3,7 +3,7 @@
 //! IMK 的所有回调都在主线程，所以用 `thread_local` 而不是锁；从别的线程访问会拿到 `None`。
 //!
 //! 配置只有一条通路：[`Host::apply_config`] 把当前 `Config` 推给 Engine 与界面。启动、菜单开关、
-//! 设置窗口、手改文件被监视到，全都走它；三个入口都只写 `config.toml`，不各存一套状态。
+//! 设置程序、手改文件被监视到，全都走它；几个入口都只写 `config.toml`，不各存一套状态。
 
 mod aux_code;
 mod clipboard_process;
@@ -23,10 +23,9 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 
 use objc2::MainThreadMarker;
-use objc2_app_kit::{NSPasteboard, NSPasteboardTypeString};
-use objc2_foundation::{NSProcessInfo, NSRect, NSString};
+use objc2_foundation::NSRect;
 use qingjian_core::{
-    Candidate, CandidateKind, Cell, CloudWord, EmojiTable, Engine, FuzzyRules, Language, ModeKeys,
+    Candidate, CandidateKind, Cell, CloudWord, EmojiTable, Engine, FuzzyRules, Language,
     NoGlossFiller, NoInputLogger, NoPredictor, NoTranslator, Prediction,
 };
 use qingjian_dictionary::{Dictionary, WordList};
@@ -35,14 +34,10 @@ use qingjian_lm::BigramModel;
 use qingjian_platform::extra_dictionaries;
 use qingjian_platform::logs::CompositionTrace;
 use qingjian_platform::{
-    Appearance, AppsConfig, AuxCodeConfig, CandidateRenderer, DEFAULT_ENGLISH_CANDIDATES_ON,
-    DictionariesConfig, GeneralConfig, HighlightKeys, KeyCombo, KeyHintMode, LEARNING_LANGUAGE_OFF,
-    LayoutMode, LocalModelConfig, LogLevel, Modifiers, PAGE_KEY_OPTIONS, PageKeys, PreeditMode,
-    Scheme, ShortcutConfig, UpdateChannel,
+    AppsConfig, AuxCodeConfig, DictionariesConfig, GeneralConfig, HighlightKeys, KeyCombo,
+    KeyHintMode, LayoutMode, LocalModelConfig, Modifiers, PageKeys, PreeditMode, ShortcutConfig,
 };
-use qingjian_predict::{
-    API_USAGE_FILE, CloudGlossFiller, CloudPredictor, ConnectionTest, PredictConfig, PredictError,
-};
+use qingjian_predict::{API_USAGE_FILE, CloudGlossFiller, CloudPredictor, PredictConfig};
 use qingjian_translate::{Glossary, LayeredTranslator, LevelTable, PersonalGlossary};
 
 use crate::app::BundleInfo;
@@ -50,11 +45,9 @@ use crate::app::{Settings, logging, paths};
 use crate::candidates::{CandidateWindow, Frame, Preedit, Row};
 use crate::error::HostError;
 use crate::menubar::{InputMenu, MenuAction};
-use crate::preferences::{PreferencesWindow, Setting, SettingValue, UpdateStatus};
 
-use cloud::{CloudTestMonitor, PredictMonitor};
+use cloud::PredictMonitor;
 use config::{ConfigWatch, TextReplacement};
-pub use dictionaries::DictionaryInfo;
 pub use init::init;
 use mode::{ModeOsd, ModeSwitch};
 use model::RescoreMonitor;
@@ -71,9 +64,6 @@ pub struct Host {
 
     /// 输入法菜单，挂在系统输入源菜单上（IMK `menu` 回调）。
     pub menu: InputMenu,
-
-    /// 偏好设置窗口。
-    pub preferences: PreferencesWindow,
 
     /// 配置文件的当前值与修改时间。
     pub settings: Settings,
@@ -123,20 +113,11 @@ pub struct Host {
     /// 候选词后面带上辅码（配置 `[general] aux_code_show`）。
     pub aux_code_show: bool,
 
-    /// 偏好设置「词库」页显示的列表，勾选框 / 移除按钮的下标对着它。
-    dictionary_list: Vec<DictionaryInfo>,
-
     /// 当前学习语言；`None` 为关（不显示译文）。
     learning_language: Option<Language>,
 
-    /// 打进包里的释义表语言，设置窗口按这个顺序列。
-    languages: Vec<Language>,
-
-    /// 版本号与构建标识，诊断信息里用。
+    /// 版本号，输入日志的会话行里用。
     version: String,
-
-    /// 见 [`BundleInfo::build`]。
-    build: String,
 
     /// 每页候选数（配置 `[general] page_size`，已夹到 1–9）。
     pub page_size: usize,
@@ -234,12 +215,6 @@ pub struct Host {
     /// 联想结果轮询定时器。
     pub monitor: PredictMonitor,
 
-    /// 进行中的云服务连通性测试（「云服务」页「测试连接」按钮）；没在测为 `None`。
-    cloud_test: Option<ConnectionTest>,
-
-    /// 连通性测试的轮询定时器。
-    cloud_test_monitor: CloudTestMonitor,
-
     /// 本地整句模型的防抖与轮询定时器。
     rescore: RescoreMonitor,
 
@@ -253,8 +228,8 @@ pub struct Host {
     /// 检查更新；拿不到数据目录时没有。
     updates: Option<qingjian_update::Checker>,
 
-    /// 菜单与「关于」页上正显示的更新状态，变了才刷界面。
-    update_status: UpdateStatus,
+    /// 菜单里正显示的「有新版本」；变了才刷菜单。
+    update_available: Option<String>,
 
     /// 当前会话的候选、高亮、页码、preedit。
     pub session: Session,

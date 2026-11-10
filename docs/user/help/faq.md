@@ -62,7 +62,7 @@ macOS 先注销后重新登录，仍没有再到「系统设置 → 键盘 → �
 ## 设置
 
 **设置窗口打不开或某项不生效**
-可改用旧版设置，见 [设置窗口](../getting-started/settings.md#旧版设置)，并请反馈。
+请[反馈](feedback.md)。Windows 上还可以改用旧版设置，见 [设置窗口](../getting-started/settings.md)。
 
 **手动改配置文件改错了**
 青简沿用上一份可用的设置，macOS 的输入法菜单会多一条灰色的错误说明；按说明改回并保存即可。见 [直接编辑配置文件](../advanced/config-file.md)。

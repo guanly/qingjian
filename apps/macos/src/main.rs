@@ -12,7 +12,6 @@ mod error;
 mod host;
 mod imk;
 mod menubar;
-mod preferences;
 
 use objc2::{AnyThread, ClassType, MainThreadMarker};
 use objc2_app_kit::NSApplication;
@@ -72,7 +71,13 @@ fn main() {
         );
     }));
     let info = app::BundleInfo::from_main_bundle();
-    tracing::info!(connection = %info.connection_name, bundle = %info.identifier, "启动");
+    tracing::info!(
+        connection = %info.connection_name,
+        bundle = %info.identifier,
+        version = %info.version,
+        build = %info.build,
+        "启动"
+    );
 
     // define_class! 的类在首次调用 class() 时才注册到 ObjC 运行时，而 IMKServer 初始化时就会按
     // Info.plist 里的类名查找；找不到会静默退回基类 IMKInputController，表现为按键全部透传。

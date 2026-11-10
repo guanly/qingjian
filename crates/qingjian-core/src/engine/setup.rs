@@ -663,7 +663,7 @@ impl Engine {
         self.metered = metered;
     }
 
-    /// 输入统计的汇总（偏好设置「统计」页）。
+    /// 输入统计的汇总（设置程序「统计」页）。
     pub fn usage_summary(&self) -> UsageSummary {
         self.meter.summary()
     }

@@ -3,7 +3,7 @@
 use super::*;
 use crate::candidates::MenuHandlers;
 
-/// 加载数据并建立单例。必须在主线程、在 IMKServer 建立之前调用。版本显示在菜单末行与「关于」页。
+/// 加载数据并建立单例。必须在主线程、在 IMKServer 建立之前调用。版本显示在菜单末行。
 pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
     let version = info.version.as_str();
     let settings = Settings::load();
@@ -124,7 +124,6 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
         pick: std::rc::Rc::new(crate::imk::menu_pick),
     });
     let menu = InputMenu::new(mtm, version);
-    let preferences = PreferencesWindow::new(mtm, &languages, version, &info.build);
     let monitor = PredictMonitor::new(mtm);
     let watch = ConfigWatch::new(mtm);
     let mode_switch = ModeSwitch::default();
@@ -134,7 +133,6 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             engine,
             window,
             menu,
-            preferences,
             settings,
             watch,
             mode_switch,
@@ -151,11 +149,8 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             dictionary_files: Vec::new(),
             user_word_stamp: super::config::user_word_stamp(),
             aux_code_show: false,
-            dictionary_list: Vec::new(),
             learning_language,
-            languages,
             version: version.to_owned(),
-            build: info.build.clone(),
             page_size: 9,
             cloud_slots: 2,
             page_keys: qingjian_platform::DEFAULT_PAGE_KEYS,
@@ -188,21 +183,19 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             text_replacements: Vec::new(),
             apps: AppsConfig::default(),
             monitor,
-            cloud_test: None,
-            cloud_test_monitor: CloudTestMonitor::new(mtm),
             rescore: RescoreMonitor::new(mtm),
             model_loader: None,
             applied_model: None,
             updates: paths::user_data_dir()
                 .map(|dir| qingjian_update::Checker::new(dir.join(UPDATE_STATE_FILE), version)),
-            update_status: UpdateStatus::default(),
+            update_available: None,
             session: Session::default(),
             trace: None,
             sentence: None,
             anchor: NSRect::ZERO,
         })
     });
-    // 配置里的开关走和菜单 / 设置窗口 / 热加载同一条通路
+    // 配置里的开关走和菜单 / 设置程序 / 热加载同一条通路
     with(|host| host.apply_config(false));
     Ok(())
 }
@@ -218,62 +211,6 @@ pub(super) fn load_learner(dir: &std::path::Path) -> FrequencyLearner {
             FrequencyLearner::default()
         }
     }
-}
-
-/// 读一本词库的显示信息；文件坏了标 `broken`。
-pub(super) fn dictionary_info(
-    stem: String,
-    path: PathBuf,
-    builtin: bool,
-    enabled: bool,
-) -> DictionaryInfo {
-    match Dictionary::from_path(&path) {
-        Ok(dictionary) => DictionaryInfo {
-            name: dictionary
-                .metadata()
-                .map_or(stem.clone(), |m| m.name.clone()),
-            entries: dictionary.len(),
-            license: dictionary
-                .metadata()
-                .map_or(String::new(), |m| m.license.clone()),
-            enabled,
-            broken: false,
-            stem,
-            builtin,
-            path,
-        },
-        Err(_) => DictionaryInfo {
-            name: stem.clone(),
-            entries: 0,
-            license: String::new(),
-            enabled,
-            broken: true,
-            stem,
-            builtin,
-            path,
-        },
-    }
-}
-
-/// 把 `stem` 加进（`present` 为真）或移出字符串列表；没变化返回 `None`。
-pub(super) fn toggle_membership(
-    mut list: Vec<String>,
-    stem: &str,
-    present: bool,
-) -> Option<Vec<String>> {
-    let has = list.iter().any(|d| d == stem);
-    if present && !has {
-        list.push(stem.to_owned());
-    } else if !present && has {
-        list.retain(|d| d != stem);
-    } else {
-        return None;
-    }
-    Some(list)
-}
-
-pub(super) fn string_array(items: &[String]) -> toml_edit::Array {
-    items.iter().map(String::as_str).collect()
 }
 
 /// 把包里有的 emoji 表（中文、英文）合成一张；一张都没有返回 `None`，坏了的只记日志跳过。

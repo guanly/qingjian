@@ -1,115 +1,9 @@
-//! 词库管理：随包领域词库开关，用户导入词库的导入 / 移除 / 开关，重新加载。
+//! 附加词库的装配：随包领域词库 + 用户 `dicts/` 下导入的词库。
 
-mod info;
-
-pub use info::DictionaryInfo;
-
-use super::init::{dictionary_info, string_array, toggle_membership};
 use super::*;
 
 impl Host {
-    /// 「词库」页的列表：随包领域词库在前、用户目录 `dicts/` 里的在后（含关掉的）。
-    pub(super) fn dictionary_infos(&self) -> Vec<DictionaryInfo> {
-        let config = &self.settings.config().dictionaries;
-        let mut infos = Vec::new();
-        if let Some(dir) = paths::bundled_dicts_dir() {
-            for (stem, path) in extra_dictionaries::list(&dir) {
-                let enabled = config.is_domain_enabled(&stem);
-                infos.push(dictionary_info(stem, path, true, enabled));
-            }
-        }
-        if let Some(dir) = paths::dicts_dir() {
-            for (stem, path) in extra_dictionaries::list(&dir) {
-                let enabled = config.is_enabled(&stem);
-                infos.push(dictionary_info(stem, path, false, enabled));
-            }
-        }
-        infos
-    }
-
-    /// 导入一本词库（TSV / Rime yaml / 只有词的表 / .qj）到 `dicts/`，然后重新装配。
-    /// 只有词的表按随包词库派生读音。
-    pub fn import_dictionary(&mut self, source: &std::path::Path) {
-        let Some(dir) = paths::dicts_dir() else {
-            return;
-        };
-        let references = reference_dictionaries();
-        let borrowed: Vec<&qingjian_dictionary::Dictionary> = references.iter().collect();
-        match qingjian_dictionary::import::import_dictionary(source, &dir, &borrowed) {
-            Ok(done) => {
-                let imported = &done.imported;
-                tracing::info!(
-                    name = %imported.name, entries = imported.entries, path = %imported.path.display(),
-                    skipped = done.report.as_ref().map_or(0, |report| report.unknown.len()),
-                    "词库已导入"
-                );
-                // 之前关掉过同名词库的，导入后自动打开
-                let stem = imported
-                    .path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or_default()
-                    .to_owned();
-                self.set_dictionary_enabled(&stem, true);
-                self.reload_dictionaries();
-                self.apply_config(false);
-            }
-            Err(error) => tracing::warn!(source = %source.display(), %error, "词库导入失败"),
-        }
-    }
-
-    /// 移除一本导入的词库：文件挪到 `dicts/removed/`（可手工找回），配置里的开关项一并清掉。随包词库不能移除。
-    pub fn remove_dictionary(&mut self, index: usize) {
-        let Some(info) = self.dictionary_list.get(index).cloned() else {
-            return;
-        };
-        if info.builtin {
-            return;
-        }
-        let Some(dir) = paths::dicts_dir() else {
-            return;
-        };
-        let removed = dir.join("removed");
-        let moved = std::fs::create_dir_all(&removed).and_then(|()| {
-            std::fs::rename(
-                &info.path,
-                removed.join(info.path.file_name().unwrap_or_default()),
-            )
-        });
-        match moved {
-            Ok(()) => tracing::info!(name = %info.name, "词库已移除（挪到 dicts/removed/）"),
-            Err(error) => tracing::warn!(%error, path = %info.path.display(), "移除词库失败"),
-        }
-        self.set_dictionary_enabled(&info.stem, true);
-        self.reload_dictionaries();
-        self.apply_config(false);
-    }
-
-    /// 改 `[dictionaries] disabled`：`on` 为真从列表里去掉，否则加进去。
-    pub fn set_dictionary_enabled(&mut self, stem: &str, on: bool) {
-        let disabled = self.settings.config().dictionaries.disabled.clone();
-        if let Some(disabled) = toggle_membership(disabled, stem, !on) {
-            self.settings.set_value(
-                "dictionaries",
-                "disabled",
-                toml_edit::Value::Array(string_array(&disabled)),
-            );
-        }
-    }
-
-    /// 改 `[dictionaries] domains`（随包领域词库）：`on` 为真加进列表，否则去掉。
-    pub fn set_domain_enabled(&mut self, stem: &str, on: bool) {
-        let domains = self.settings.config().dictionaries.domains.clone();
-        if let Some(domains) = toggle_membership(domains, stem, on) {
-            self.settings.set_value(
-                "dictionaries",
-                "domains",
-                toml_edit::Value::Array(string_array(&domains)),
-            );
-        }
-    }
-
-    /// 按当前配置重新加载 `dicts/` 目录（导入、移除、开关之后）。
+    /// 按当前配置重新加载 `dicts/` 目录（设置程序导入、移除、开关之后靠文件快照发现并重装）。
     pub fn reload_dictionaries(&mut self) {
         let config = self.settings.config().dictionaries.clone();
         let loaded = extra_dictionaries::load(
@@ -129,23 +23,4 @@ pub(super) fn dictionary_files() -> Vec<(std::path::PathBuf, Option<std::time::S
     paths::dicts_dir()
         .map(|dir| extra_dictionaries::snapshot(&dir))
         .unwrap_or_default()
-}
-
-/// 无读音词表的参考词库：随包基础词库加随包领域词库，读不到的跳过。
-fn reference_dictionaries() -> Vec<qingjian_dictionary::Dictionary> {
-    use qingjian_dictionary::Dictionary;
-    let mut references = Vec::new();
-    let mut read = |path: &std::path::Path| match Dictionary::from_path(path) {
-        Ok(dictionary) => references.push(dictionary),
-        Err(error) => tracing::warn!(path = %path.display(), %error, "参考词库打不开"),
-    };
-    if let Ok(base) = paths::resource("dict.qj") {
-        read(&base);
-    }
-    if let Some(dir) = paths::bundled_dicts_dir() {
-        for (_, path) in extra_dictionaries::list(&dir) {
-            read(&path);
-        }
-    }
-    references
 }

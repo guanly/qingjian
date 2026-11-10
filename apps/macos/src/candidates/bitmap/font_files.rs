@@ -1,9 +1,7 @@
-//! 按字族名找系统里的字体文件（CoreText 的字体登记），给渲染器只加载这几个文件；再列出可选的字族名给设置页。
+//! 按字族名找系统里的字体文件（CoreText 的字体登记），给渲染器只加载这几个文件。
 
 use std::path::PathBuf;
 
-use objc2::MainThreadMarker;
-use objc2_app_kit::NSFontManager;
 use objc2_core_foundation::{CFArray, CFDictionary, CFRetained, CFString, CFURL, CFURLPathStyle};
 use objc2_core_text::{CTFontDescriptor, kCTFontFamilyNameAttribute, kCTFontURLAttribute};
 
@@ -39,15 +37,4 @@ pub(crate) fn family_files(family: &str) -> Vec<PathBuf> {
         }
     }
     files
-}
-
-/// 系统里可选的字族名，按系统给的顺序。
-pub(crate) fn available_families(mtm: MainThreadMarker) -> Vec<String> {
-    NSFontManager::sharedFontManager(mtm)
-        .availableFontFamilies()
-        .iter()
-        .map(|name| name.to_string())
-        // 以点开头的是系统私有字体，用户选不着也不该列
-        .filter(|name| !name.starts_with('.'))
-        .collect()
 }

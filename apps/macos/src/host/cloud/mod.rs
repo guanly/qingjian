@@ -1,67 +1,12 @@
-//! 云端：测试连接的起停与轮询，联想的等待 / 取消 / 轮询与结果套用到当前页。
+//! 云端：联想的等待 / 取消 / 轮询与结果套用到当前页。
 
 mod predict_monitor;
-mod test_monitor;
 
 pub(super) use predict_monitor::PredictMonitor;
-pub(super) use test_monitor::CloudTestMonitor;
 
 use super::*;
 
 impl Host {
-    /// 清空输入日志文件；开着的话重新打开继续记。
-    /// 「测试连接」：用当前配置发一条最小请求，结果回到偏好设置窗口底部的状态行。
-    pub(super) fn start_cloud_test(&mut self) {
-        let config = self.settings.config().predict.clone();
-        let usage = paths::user_data_dir().map(|dir| dir.join(API_USAGE_FILE));
-        match ConnectionTest::start_with_usage(&config, usage) {
-            Ok(test) => {
-                self.cloud_test = Some(test);
-                self.cloud_test_monitor.start();
-                self.preferences.set_status(&format!(
-                    "正在测试云服务连接：{} · {} …",
-                    config.base_url, config.model
-                ));
-            }
-            Err(error) => {
-                self.preferences.set_status(&format!(
-                    "云服务连接测试没能开始：{}",
-                    describe_predict_error(&error)
-                ));
-            }
-        }
-    }
-
-    /// 轮询定时器每 0.2 秒来一次：结果到了就显示并停表；等太久也停。
-    pub fn poll_cloud_test(&mut self) {
-        let Some(test) = &self.cloud_test else {
-            self.cloud_test_monitor.stop();
-            return;
-        };
-        let Some(outcome) = test.poll() else {
-            if self.cloud_test_monitor.expired() {
-                self.cloud_test = None;
-                self.cloud_test_monitor.stop();
-                self.preferences
-                    .set_status("云服务连接测试：等了 30 秒没有结果，请检查网络或代理");
-            }
-            return;
-        };
-        self.cloud_test = None;
-        self.cloud_test_monitor.stop();
-        match outcome {
-            Ok(report) => self.preferences.set_status(&format!(
-                "云服务连接正常：{} 在 {} ms 内回复",
-                report.model,
-                report.elapsed.as_millis()
-            )),
-            Err(error) => self.preferences.set_status(&format!(
-                "云服务连接失败：{}",
-                describe_predict_error(&error)
-            )),
-        }
-    }
-
     /// 已发出联想请求：清掉旧结果，开始轮询。`manual` 是按需联想的请求序号，自动联想传 `None`。
     pub fn await_prediction(&mut self, manual: Option<u64>) {
         self.sentence = None;
@@ -194,25 +139,6 @@ pub(super) fn cloud_slots_untouched(
     capacity: usize,
 ) -> bool {
     page == 0 && (local_empty || highlighted < page_size.saturating_sub(capacity))
-}
-
-/// 连通性测试的错误换成给用户看的中文；接口返回的原话保留，方便对着服务商文档查。
-pub(super) fn describe_predict_error(error: &PredictError) -> String {
-    match error {
-        PredictError::MissingApiKey(env) => {
-            format!("没有 API 密钥。在上面填一个，或设置环境变量 {env}")
-        }
-        PredictError::Timeout(ms) => {
-            format!("{ms} ms 内没有回复。检查网络或代理：输入法进程不读终端里的代理变量")
-        }
-        PredictError::EmptyReply => "接口通了但没有返回正文，检查模型名是否正确".to_owned(),
-        PredictError::BudgetExhausted => {
-            "接口通了但正文是空的：模型开着思考，把输出额度用光了".to_owned()
-        }
-        PredictError::Encode(error) => format!("请求编码失败：{error}"),
-        PredictError::Runtime(error) => format!("起不了后台线程：{error}"),
-        PredictError::Api(error) => format!("请求失败：{error}"),
-    }
 }
 
 /// 翻译窗口里的一行：译文（或占位文字）当作云端来源的候选画出来。

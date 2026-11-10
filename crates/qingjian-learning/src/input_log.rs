@@ -55,7 +55,7 @@ impl InputLog {
         &self.path
     }
 
-    /// 清空日志文件（用户在偏好设置里点「清空」）。
+    /// 清空日志文件（用户在设置程序里点「清空」）。
     pub fn clear(path: &Path) -> std::io::Result<()> {
         File::create(path).map(|_| ())
     }

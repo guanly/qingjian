@@ -62,7 +62,7 @@ Please [report](feedback.md) the app name and what happens to the author.
 ## Settings
 
 **The settings window won't open, or a setting doesn't take effect**
-Use the legacy settings instead, see [The settings window](../getting-started/settings.md#Legacy-settings), and please report it.
+Please [report it](feedback.md). On Windows you can still use the legacy settings, see [The settings window](../getting-started/settings.md).
 
 **I made a mistake editing the configuration file by hand**
 Qingjian keeps using the last valid settings, and the macOS input method menu shows an extra grey line describing the error; fix it as described and save. See [Editing the configuration file](../advanced/config-file.md).

@@ -84,7 +84,7 @@ impl Engine {
         self.gloss_filler.translate(language, text);
     }
 
-    /// 当前学习语言的词汇汇总（偏好设置「统计」页）。
+    /// 当前学习语言的词汇汇总（设置程序「统计」页）。
     pub fn vocabulary_summary(&self) -> VocabularySummary {
         self.vocabulary.summary(self.translator.language())
     }

@@ -16,12 +16,6 @@ pub enum MenuAction {
     /// 打开设置程序（装在 `Qingjian.app/Contents/Applications/` 里的 `QingjianSettings.app`）。
     OpenSettings,
 
-    /// 打开旧版偏好设置窗口（留一个版本作回退）。
-    OpenPreferences,
-
-    /// 在访达里打开日志目录。
-    OpenLogs,
-
     /// 在访达里打开配置目录（`~/Library/Application Support/Qingjian/`）：`config.toml`、
     /// 用户词、导入的词库与码表、主题都在这里。
     OpenConfigDir,
@@ -40,8 +34,6 @@ impl MenuAction {
     pub fn tag(self) -> NSInteger {
         match self {
             Self::ToggleCloud => 1,
-            Self::OpenPreferences => 2,
-            Self::OpenLogs => 3,
             Self::OpenDownload => 4,
             Self::OpenSettings => 5,
             Self::OpenSymbolPanel => 6,
@@ -54,8 +46,6 @@ impl MenuAction {
     pub fn from_tag(tag: NSInteger) -> Option<Self> {
         Some(match tag {
             1 => Self::ToggleCloud,
-            2 => Self::OpenPreferences,
-            3 => Self::OpenLogs,
             4 => Self::OpenDownload,
             5 => Self::OpenSettings,
             6 => Self::OpenSymbolPanel,
@@ -78,8 +68,6 @@ mod tests {
         let all = [
             MenuAction::ToggleCloud,
             MenuAction::OpenSettings,
-            MenuAction::OpenPreferences,
-            MenuAction::OpenLogs,
             MenuAction::OpenDownload,
             MenuAction::OpenSymbolPanel,
             MenuAction::NewWord,

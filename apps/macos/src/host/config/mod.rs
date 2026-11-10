@@ -14,7 +14,7 @@ use super::*;
 
 impl Host {
     /// 把当前配置推给 Engine 与界面：模糊音 / 模式键 / 翻页 / 外观直接设；学习语言变了换释义表；
-    /// `[predict]` 变了（或 `force`）才重建 Predictor；最后刷新云朵标识、菜单勾选与设置窗口。
+    /// `[predict]` 变了（或 `force`）才重建 Predictor；最后刷新云朵标识与菜单勾选。
     pub fn apply_config(&mut self, force: bool) {
         let config = self.settings.config().clone();
         self.engine.set_fuzzy(config.fuzzy);
@@ -165,20 +165,6 @@ impl Host {
         let cloud_active = self.engine.prediction_enabled();
         self.refresh_mode_ui();
         self.menu.sync(&config, cloud_active, self.settings.error());
-        let key_present = config
-            .predict
-            .api_key
-            .as_deref()
-            .is_some_and(|key| !key.trim().is_empty())
-            || std::env::var(&config.predict.api_key_env).is_ok_and(|key| !key.trim().is_empty());
-        self.dictionary_list = self.dictionary_infos();
-        self.preferences.sync(
-            &config,
-            key_present,
-            self.settings.error(),
-            &self.dictionary_list,
-            &self.update_status,
-        );
         self.sync_update();
         super::clipboard_process::sync(config.clipboard.enabled);
     }
@@ -300,22 +286,16 @@ impl Host {
         self.sync_update();
     }
 
-    /// 检查更新的状态变了就刷菜单里的「有新版本」与「关于」页；没变什么都不做。
+    /// 检查更新的状态变了就刷菜单里的「有新版本」；没变什么都不做。
     pub fn sync_update(&mut self) {
         let Some(updates) = &self.updates else {
             return;
         };
         let config = self.settings.config();
-        let status = UpdateStatus {
-            available: updates.available(&config.update).map(|found| found.version),
-            checking: updates.checking(),
-            checked: updates.checked_at() > 0,
-            dev_build: updates.is_dev_build(),
-        };
-        if status != self.update_status {
-            self.menu.sync_update(status.available.as_deref());
-            self.preferences.sync_update(config, &status);
-            self.update_status = status;
+        let available = updates.available(&config.update).map(|found| found.version);
+        if available != self.update_available {
+            self.menu.sync_update(available.as_deref());
+            self.update_available = available;
         }
     }
 

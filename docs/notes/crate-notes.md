@@ -431,8 +431,8 @@ Windows Server 自绘候选窗（GDI）按 `Frame.columns` / `column_ems` 画矩
 `examples/preview.rs` 出 PNG 与真机截图并排比、`--measure` 与 AppKit 对宽度、`--theme <目录>` 画用户主题（系统字族在 `--font-dir` 里按名字找）。
 快照测试 `tests/snapshots.rs`：`tests/scenes/` 的样例帧（与 preview 共用）逐像素比 `tests/snapshots/<os>/` 的基准，字体环境（`fingerprint.txt`）对不上或没有基准时跳过；
 改了渲染就 `QINGJIAN_UPDATE_SNAPSHOTS=1 cargo test -p qingjian-render --test snapshots` 重出基准，变了的 PNG 看过再提交，失败时差异图在 `target/tmp/render-snapshots/`。mac 壳 `candidates/bitmap/` 贴位图，`[general] renderer = "system"` 切回 AppKit 绘制
-（过渡期退路，偏好设置「候选窗口」页可选）；`[general] font` 是候选窗字族名（空为系统字体，`bitmap/font_files.rs` 用 CoreText 按字族名找文件只加载那几个，没装就回系统字体；
-设置页 `preferences/font_picker/` 是搜索框 + 列表）。设计与验收见 `docs/design/rendering.md`。
+（过渡期退路，设置程序「外观」页可选）；`[general] font` 是候选窗字族名（空为系统字体，`bitmap/font_files.rs` 用 CoreText 按字族名找文件只加载那几个，没装就回系统字体；
+设置程序「外观」页的字体框可按字族名搜索，见 `apps/settings/src/system/fonts.rs`）。设计与验收见 `docs/design/rendering.md`。
 
 主题预览图（`preview/`）：`preview::write_previews` 用 `sample.rs` 的 nihao 两帧把主题目录画成 2 倍的 `vertical.png` / `horizontal.png`（没锁定外观再加 `vertical-dark.png`），单张失败只记在它的 `Shot` 里；`preview::run` 是两个壳 `--theme-preview <主题目录>` 的入口（mac `main.rs`、Windows Server `main.rs`，Windows release 是 GUI 子系统，直接从 cmd 跑时先 `AttachConsole` 挂父进程控制台），写进 `<主题目录>/preview/`。主题仓库的 `tools/preview.py` 找本机装的青简调它，旧版不认参数会照常起服务，脚本 30 秒超时按版本太旧提示。
 
@@ -498,7 +498,7 @@ Windows Server 自绘候选窗（GDI）按 `Frame.columns` / `column_ems` 画矩
 
 ## apps/macos
 
-IMK 输入法，源码按 `app / host / imk / candidates / menubar / preferences` 分目录。
+IMK 输入法，源码按 `app / host / imk / candidates / menubar` 分目录；设置界面不在这里，在 `apps/settings`。
 
 **在 Linux 上也能对它做类型检查**（不链接、不产出可执行文件，但编译错误与 clippy 都查得到）。
 `qingjian-macos` 在非 Apple 平台上是硬 `compile_error!`、提交钩子也排除它，于是在 Linux 上改它等于盲改。办法是对 darwin 目标 check，
@@ -518,11 +518,11 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
 第一次要对 darwin 把整棵依赖树检查一遍（只做 check、不生成代码，12 核机器上约半分钟），之后增量一两秒。
 与 CI 的 macOS job 是同一道门（clippy `-D warnings` 含测试目标）；真要跑测试、打包、装机仍得在 Mac 上。
 
-- 输入法菜单（只挂系统输入源菜单，不另挂「中 / 英」状态项）与偏好设置窗口都是配置文件的前端：只写 `config.toml`，`Host::apply_config` 一条通路热加载，激活期间每秒看一次文件 mtime。
+- 输入法菜单（只挂系统输入源菜单，不另挂「中 / 英」状态项）与设置程序都是配置文件的前端：只写 `config.toml`，`Host::apply_config` 一条通路热加载，激活期间每秒看一次文件 mtime。
   翻页键（`[general] page_keys`）走 `Session::page_target` / `can_turn_page`：选 `-=` 时 `-` / `=` **没有上一页 / 下一页就落回原语义**（英文直输段），别的翻页键翻不动照旧吃键（`imk/controller/display.rs::page_key`）。Windows / Linux 还是老行为，尚未同步。
   输入方案（`[general] scheme` 与 `code`）也在这里装配，交给 `Host::scheme_slot`（`qingjian_platform::SchemeSlot`，随包方案目录是 `paths::bundled_schemes_dir()`）；
   找不到或码表坏了只警告并按拼音跑。顶字与满码自动上屏接在 `imk/controller/text.rs` 收字母那里。
-  「造词…」的菜单项在 `menubar/menu.rs`（可点条目只能放在 `OpenLogs` 之前那一组，放到下面两个纯展示条目之间会让 IMK 每次按键后停用菜单、打不了字），
+  「造词…」的菜单项在 `menubar/menu.rs`（可点条目只能放在分隔线之后、两个纯展示条目之前那一组，放到纯展示条目之间会让 IMK 每次按键后停用菜单、打不了字），
   动作是 `MenuAction::NewWord`（tag 7），派到 `host/settings.rs::new_word`，框本身是 `host/new_word.rs` 里的多行框
   （`dialog::prompt_area`：`NSTextView` 放进 `NSScrollView`，回车归换行，确定键因此是 ⌘↩）。
   快捷键 `[shortcut] new_word`（缺省 ⌃⌥N，`Host::new_word_keys`）在 `imk/controller/mod.rs` 与翻译选中文字并排判定，
@@ -533,8 +533,7 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   框里一个字符也收不到，**别的应用也一起打不了字**；切到别的输入法又能打，因为按键不再路由给青简。
   往主队列后排（`host::defer`）解决不了这个，只是把开框挪出 `Host` 的借用。
   所以小对话框统一走 `src/dialog.rs` 的**非模态**窗口（`dialog::prompt` / `dialog::notice`，结果走回调，
-  按钮 target 兼窗口 delegate，⌘V 等快捷键靠 `preferences::edit_menu::install`），
-  「导入词库」的 NSOpenPanel 同样改成 `beginWithCompletionHandler:` 异步回调。
+  按钮 target 兼窗口 delegate，⌘V 等快捷键靠同文件里的 `install_edit_menu` 装一份只有编辑项的主菜单）。
   开框仍要 `host::defer`：窗口一激活本进程，IMK 就给它建输入会话并调 `activateServer`，那次也要 `host::with`，
   撞在借用上这个会话就没初始化（日志里能看 `app.qingjian.inputmethod` 的 `activateServer` 紧跟「Host 正在被借用」）。
   框里走的是青简自己：拼音 / 五笔组句、候选窗照常出，确定时先 `makeFirstResponder(nil)` 结束编辑再读值。
@@ -549,7 +548,7 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
 - 辅码：`host/aux_code.rs` 按 `AuxCodeSources` 装码表（随包 `Resources/codes/`，bundle.sh 从 `data/generated/codes/` 拷，连同 CNS 署名），`reload_config_if_changed` 顺带比文件快照；
   按键分流在 `imk/controller/text.rs`，规则与 Windows Server 一致（触发键、码段、筛空吞键、辅码态标点先上屏），Esc 在辅码态只清码段；`Row.code` 进渲染器，旧原生候选窗不画码。
 - 日志在 `~/Library/Logs/Qingjian/`（按天分文件留 7 天，删了会重建），用户数据与配置在 `~/Library/Application Support/Qingjian/`。
-- 配置项：云联想 `[predict]`（偏好设置「云服务」页有「测试连接」按钮：`qingjian_predict::ConnectionTest` 起线程发一条最小请求，`Host` 用独立定时器 `CloudTestMonitor` 轮询结果显示到窗口底部；
+- 配置项：云联想 `[predict]`（「测试连接」在新设置程序的「云服务」页里，输入法进程不再自带云连通性测试；
   `reasoning_effort` 缺省 `none`，DeepSeek V4 默认思考，不关正文为空）；模糊音 `[fuzzy]` 默认都关；`[general]` 学习语言（`off` 不显示译文）/ 每页候选数 / 翻页键 / 外观 / 竖排横排 / 拼音显示位置 /
   英文模式候选开关 / 中文优先 `chinese_first` / 中文模式英文词 `english_in_chinese`（`Engine::set_english_in_chinese`）/ emoji 候选 `emoji`（`Engine::set_emoji_candidates`）/ 中西文自动空格 `auto_space`（直通字符经 `text.rs` 的 `pass_through`，开着时首键也读光标前文）/ 双拼方案 `shuangpin`（小鹤 / 自然码 / 微软 / 搜狗 / 智能ABC / 小浪 / 首道 / 拼音加加，空为全拼）/ 日志级别 `log_level`（缺省 info 不含敲的内容，debug 逐键记，热切换）/ 输入日志 `input_log`；
   `[shortcut]` 中英切换键 `switch_mode`（macOS 只认 `shift`：缺省 `[]` 用 Caps Lock 切；勾上后单击 Shift 切中英、Caps Lock 只管大小写，`control` / `ctrl+alt+space` 忽略；
@@ -558,7 +557,7 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   实测就只有 keyDown 送进来、Shift 的按下 / 抬起完全收不到，那时只能靠 30 ms 轮询采样、整拍跨越的快点会漏掉）、模式键 v / u、`question_mark`（缺省关，开了空缓冲区敲 `?` 进问字）、上屏第一 / 第二个译词的修饰键 `translation` / `translation_second`、翻译选中文字 `translate_selection`（Linux 缺省 Alt+Shift+T）；
   `[apps] english_candidates_on` 按应用标识列出英文模式给候选的应用（白名单，缺省浏览器 / 聊天 / 办公 / 笔记，`*` 前缀匹配，`["*"]` 处处都给），`english_candidates_off` 从中排除；
   `[dictionaries] domains` 打开随包的领域词库（`Resources/dicts/` 11 本，缺省只开 `idioms`），`disabled` 关掉用户目录 `dicts/` 里的某本导入词库；
-  偏好设置「词库」页随包的可开关、导入的可开关 / 移除，可导入 TSV / Rime yaml / .qj。
+  设置程序「词库」页随包的可开关、导入的可开关 / 移除，可导入 TSV / Rime yaml / .qj。
 - 系统文本替换（系统设置「键盘 → 文本替换」）：`host/config/text_replacements.rs` 从 `NSUserDefaults` 全局域读 `NSUserDictionaryReplacementItems`
   （每条 `{ on, replace, with }`），激活输入法时重读，变了就经 Core `merge_replacements` 并进配置里的自定义短语再 `set_custom_phrases`；
   `[general] system_text_replacements` 开关（缺省开，「自定义短语」页勾选框），内容可能含证件号、地址，日志只记条数。

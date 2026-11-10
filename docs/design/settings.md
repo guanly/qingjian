@@ -1,6 +1,6 @@
 # 设置程序的页面与设置项
 
-设置程序 `apps/settings` 三个平台共用一份，替掉了 macOS 偏好设置和 Windows 设置程序（两者留一个版本作回退）；Linux 以前没有设置界面，也用它。
+设置程序 `apps/settings` 三个平台共用一份，替掉了 macOS 偏好设置和 Windows 设置程序（macOS 旧版已移除，Windows 旧版还留一个版本作回退）；Linux 以前没有设置界面，也用它。
 本文定的是：分哪几页、每一项放哪页、页里怎么分组排序、标题怎么写、用什么控件。
 
 ## 原则
@@ -305,8 +305,8 @@ Linux 的输入法还没接，support 表登记「待实现」，侧栏不出这
 8. 换掉旧设置程序：新程序装进安装包，输入法菜单「设置…」、Windows 状态条的 ⚙、开始菜单与 Linux 应用菜单的「青简设置」打开它。
    - 安装位置：macOS 是 `Qingjian.app/Contents/Applications/QingjianSettings.app`（独立的 .app，自己的 Dock 图标与名字，`open` 打开；随包数据从外层 `Qingjian.app` 读）；
      Windows 是与 Server 同目录的 `qingjian-settings.exe`（只开一个，第二次启动把已开的带到前台）；Linux 是 `<前缀>/bin/qingjian-settings` 加一个 `.desktop`。
-   - 回退：旧的 macOS 偏好设置（菜单「旧版设置…」）与 Windows 设置程序（`qingjian-settings-legacy.exe`，任务栏「中 / 英」右键菜单「旧版设置…」与开始菜单「青简旧版设置」）保留作兜底；新版设置为主，缺省打开新版。
-     新程序打不开时用旧版；某项不生效靠测试拦：`config_keys` 离屏点遍每一页的控件，变了的键用输入法的 `Config` 读回核对。
+   - 回退：macOS 的旧版偏好设置与菜单里的「旧版设置…」已移除；Windows 的设置程序（`qingjian-settings-legacy.exe`，任务栏「中 / 英」右键菜单「旧版设置…」与开始菜单「青简旧版设置」）还留一个版本作兜底。
+     某项不生效靠测试拦：`config_keys` 离屏点遍每一页的控件，变了的键用输入法的 `Config` 读回核对。
    - ⓘ 可点：悬停仍是短说明，末尾一行「点一下 ⓘ 打开文档」，点了打开官网文档对应的一段（`docs.rs` 一张表，按页与行标题对到 `docs/user/` 的某个标题，
      锚点照官网的 `headingId` 生成）。测试核对表里每一段在文档里真有这个标题、每一行在那页上真有 ⓘ，文档改标题时测试报错。
    - 用户文档的设置窗口总览（`docs/user/getting-started/settings.md`）按新的页与组重写，别处的「偏好设置 → 通用」这类指路改成新的页名。

@@ -53,7 +53,7 @@ qingjian/
 ├── apps/
 │   ├── cli/                    # 测试工具：查询、逐键计时、输入日志回放评测、整句评测
 │   ├── settings/               # 设置程序：三平台共用，画在 bamboo-slip 上，读写同一份配置
-│   ├── macos/                  # IMK 输入法壳（app / host / imk / candidates / menubar / preferences（旧版设置））
+│   ├── macos/                  # IMK 输入法壳（app / host / imk / candidates / menubar）
 │   ├── windows/                # 同一个产品的四个 package：server（IPC 分派 + Engine + 命名管道 + 自绘候选窗）、
 │   │                           #   tsf（TSF 文本服务 DLL：COM 链路 + 连 Server 的管道客户端）、settings（旧版设置，WinUI 3）、installer
 │   ├── linux/                  # server（Engine + Unix socket）+ fcitx5（C++ 插件）+ scripts
@@ -353,10 +353,9 @@ CC-CEDICT 表（`dict-convert cedict`）保留为备用来源，覆盖面广但�
   `view/click.rs` 按渲染器给的点击区域认目标，`imk/controller/click.rs` 用 `activateServer:` 记下的控制器上屏，系统绘制时忽略鼠标），
   `view.rs` 自绘顶部拼音行与候选（竖排 / 横排两套画法），`theme.rs` 集中字体颜色间距，`row.rs` 把 Candidate 转成展示片段，
   `preedit/`（`mod.rs` / `segment.rs` / `style.rs`）是拼音行的分段模型（由 Core 的 `MarkedSegment` 转来），`frame.rs` 是一帧的数据；
-  `menubar/`：`indicator.rs` 是菜单栏的中 / 英 NSStatusItem（输入源图标没法动态换，只能自己放一个），
-  `menu.rs` / `action.rs` / `target.rs` 是输入法菜单；
-  `preferences/`：旧版偏好设置窗口（菜单「旧版设置…」，兜底用；`window.rs` 手排控件、`layout.rs` 逐页排版、`panel.rs` 关窗时切回激活策略、`setting/`（`Setting` 与 `SettingValue`）控件 ↔ 配置项、
-  `target.rs` 一个 `changed:` 选择器、`key_recorder.rs` 快捷键录制按钮、`usage_page.rs` 「统计」页（数字格子与「几本《某书》」文案）、`about.rs` 「关于」页文案、`edit_menu.rs` 只有编辑项的主菜单、`file_dialog.rs` 导入词库的打开面板）；
+  `menubar/`：`menu.rs` / `action.rs` / `target.rs` 是输入法菜单（不挂菜单栏状态项：中英由切换时的 OSD 交代）；
+  `dialog.rs`：非模态小对话框（造词 / 报错），顺手给进程装一份只有编辑项的主菜单，否则框里 ⌘C / ⌘V 没有菜单快捷键；
+  设置界面不在这里：`apps/settings` 是三平台共用的独立设置程序，输入法只在菜单里 `open` 它。
   `app/`：`paths.rs` 定位 `.app/Contents/Resources/`（词库、随包领域词库 `dicts/`）与 `~/Library/Application Support/Qingjian/`（用户数据），
   `settings.rs` 是配置文件的运行时状态，`logging/` 只写 `~/Library/Logs/Qingjian/`（自己的 `LogFile` 按天分文件、留 7 天、被删重建），`bundle.rs` 读 Info.plist，
   `input_source.rs` 是 `qingjian-macos --register`：走 Carbon TIS（`TISRegisterInputSource` + `TISEnableInputSource`，再起子进程 `--finish-register` 回读 `IsEnabled` 并 `TISSelectInputSource`，隔 3 秒二次确认）把 `.app` 注册成输入源并切成当前。两个坑：TIS 状态按进程缓存，本进程回读永远是旧值，只有新进程看得到；刚换过包的 3–5 秒内系统重扫会把刚启用的记录顶掉，所以要二次确认并启用。
@@ -369,8 +368,8 @@ CC-CEDICT 表（`dict-convert cedict`）保留为备用来源，覆盖面广但�
   `QINGJIAN_NOTARY_PROFILE`（notarytool keychain profile，设了就公证并 staple）；没设就 ad-hoc 签 `.app`、pkg 不签，
   测试者要在「隐私与安全性」里点「仍要打开」。卸载脚本 `uninstall.sh` 随包放在 Resources。二进制只有本机架构，Intel 要另打。
 - 配置只有一条通路：`Host::apply_config` 把当前 `Config` 推给 Engine（模糊音、模式键、Predictor 重建、释义表切换）与界面
-  （每页候选数、翻页键、外观、☁︎ 标识、菜单勾选、设置窗口控件）。启动、菜单开关、设置窗口、`host/config/watch.rs`
-  每秒一次的 mtime 监视全都走它；三个入口都只写 `config.toml`，不各存一套状态。解析失败沿用上一份，错误显示在菜单与设置窗口里。
+  （每页候选数、翻页键、外观、菜单勾选）。启动、菜单开关、设置程序、`host/config/watch.rs`
+  每秒一次的 mtime 监视全都走它；几个入口都只写 `config.toml`，不各存一套状态。解析失败沿用上一份，错误显示在菜单里。
 - **中英切换**：Caps Lock 一直是英文模式开关（系统级，不受配置影响）。勾了 `[shortcut] switch_mode` 的 `shift` 后改成单击 Shift 切换
   （`host/mode/switch.rs`：IMK 拿不到修饰键的按下 / 抬起，用 30 ms 定时器轮询 `NSEvent::modifierFlags_class()` 做边沿检测，
   按下到抬起之间插了别的键就不算一次单击，与 Windows 的 `com/key/tap.rs` 同一套规则），此时 Caps Lock 退化成只管大小写（字母按 `shift XOR caps`）。

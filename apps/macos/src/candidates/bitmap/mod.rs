@@ -6,7 +6,7 @@
 mod convert;
 mod font_files;
 
-pub(crate) use font_files::{available_families, family_files};
+pub(crate) use font_files::family_files;
 
 use objc2::AnyThread;
 use objc2::rc::Retained;

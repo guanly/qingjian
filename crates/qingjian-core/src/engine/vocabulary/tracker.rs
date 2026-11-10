@@ -21,7 +21,7 @@ pub trait VocabularyTracker: Send {
     /// 落盘。壳在停用输入法时调用，激活期间也定时调；失败只记日志。
     fn flush(&mut self) {}
 
-    /// 某种学习语言的汇总（偏好设置「统计」页）。
+    /// 某种学习语言的汇总（设置程序「统计」页）。
     fn summary(&self, _language: Language) -> VocabularySummary {
         VocabularySummary::default()
     }
