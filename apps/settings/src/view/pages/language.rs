@@ -1,7 +1,8 @@
-//! 「中英文」页：英文模式（开关、切换键、默认英文与按应用记住、英文候选、Shift + 字母），标点与中西文空格，悬浮状态条。
+//! 「中英文」页：英文模式（开关、切换键、默认英文、按应用记住、按应用固定、英文候选、Shift + 字母），
+//! 标点与中西文空格，悬浮状态条。
 
 use bamboo_slip::taffy::{FlexDirection, NodeId, Style};
-use bamboo_slip::{Checkbox, RenderError, SettingRow, Ui, Visual, group, section_title};
+use bamboo_slip::{Button, Checkbox, RenderError, SettingRow, Ui, Visual, group, section_title};
 use qingjian_platform::{DEFAULT_ENGLISH_CANDIDATES_ON, ShiftLetter, SwitchKey};
 
 use crate::i18n::tr;
@@ -57,6 +58,9 @@ pub fn language(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Render
             general.remember_mode_per_app,
             !general.english_mode,
         )?);
+    }
+    if Feature::FixedMode.here() {
+        rows.extend(fixed_modes(ui, page)?);
     }
     let only_in_apps = !config.apps.english_candidates_everywhere();
     let apps = if only_in_apps {
@@ -183,6 +187,65 @@ pub fn language(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Render
         out.push(group(ui, theme, &[status, size])?);
     }
     Ok(out)
+}
+
+/// 按应用固定中英：两组名单各带一个「添加应用」，每条能移除。
+fn fixed_modes(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, RenderError> {
+    let theme = &page.theme;
+    let apps = &page.settings.config.apps;
+    let mut rows = Vec::new();
+    for (english, title, key, slot) in [
+        (
+            false,
+            tr("language.fixed_chinese"),
+            "fixed_chinese",
+            "fixed-chinese",
+        ),
+        (
+            true,
+            tr("language.fixed_english"),
+            "fixed_english",
+            "fixed-english",
+        ),
+    ] {
+        let add = Button::new(tr("language.fixed_add_app")).build(
+            ui,
+            theme,
+            ("fixed-add", key),
+            Message::FixAppMode(english),
+        )?;
+        rows.push(with_notice(
+            ui,
+            page,
+            SettingRow::new(title)
+                .info(tr("language.fixed_info"))
+                .control(add),
+            slot,
+        )?);
+        let list = if english {
+            &apps.fixed_english
+        } else {
+            &apps.fixed_chinese
+        };
+        for app in list {
+            let kept: Vec<String> = list.iter().filter(|other| *other != app).cloned().collect();
+            let remove = Button::new(tr("language.fixed_remove")).build(
+                ui,
+                theme,
+                ("fixed-remove", app.as_str()),
+                Message::SetList("apps", key, kept),
+            )?;
+            // 界面上显示应用自己的名字，ⓘ 里留 bundle identifier：配置文件里写的是它
+            let name = crate::settings::apps::label(app);
+            rows.push(
+                SettingRow::new(&name)
+                    .info(app)
+                    .control(remove)
+                    .build(ui, theme)?,
+            );
+        }
+    }
+    Ok(rows)
 }
 
 fn width_label(full: bool) -> &'static str {

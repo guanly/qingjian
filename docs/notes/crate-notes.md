@@ -540,6 +540,12 @@ PKG_CONFIG_PATH="$onig" PKG_CONFIG_ALLOW_CROSS=1 RUSTONIG_SYSTEM_LIBONIG=1 \
   开框仍要 `host::defer`：窗口一激活本进程，IMK 就给它建输入会话并调 `activateServer`，那次也要 `host::with`，
   撞在借用上这个会话就没初始化（日志里能看 `app.qingjian.inputmethod` 的 `activateServer` 紧跟「Host 正在被借用」）。
   框里走的是青简自己：拼音 / 五笔组句、候选窗照常出，确定时先 `makeFirstResponder(nil)` 结束编辑再读值。
+- 中英模式在 `host/mode/switch.rs`：勾了单击 Shift 时由 Shift 的切换决定，否则看 Caps Lock。`[apps] fixed_chinese` / `fixed_english`
+  在 `activateServer` 里经 `Host::apply_app_mode` 设成 `ModeSwitch::force`（同时记下当时的 Caps Lock 状态），`english_mode()` 优先返回它，
+  模式真的变了才闪一次 OSD。用户在那个应用里按 Caps Lock（`note_key` 里比对设定时的状态）或单击 Shift（`shift_event_at` 从显示出来的模式翻、并清掉固定）
+  就交回给用户，切走再切回重新固定。名单匹配与英文候选共用 `AppsConfig::matches_app`。
+  防抖只看「整对边沿」：`toggled_at` 之后 50 ms（`BOUNCE_WINDOW`）内就走完的一次单击当外接键盘补的那一对丢掉。
+  别退回「按下时刻在窗口内就丢」——按下被丢后抬起没有待定项，快速连按的第二下会整次失效。
 - `apps/macos/scripts/bundle.sh --install` 打包安装到 `~/Library/Input Methods/`（开发用），`--pkg` 做分发用的 pkg（装 `/Library/Input Methods/`，postinstall 跑 `qingjian-macos --register`
   注册、启用并切成当前输入源；签名 / 公证靠 `QINGJIAN_SIGN_IDENTITY` / `QINGJIAN_INSTALLER_IDENTITY` / `QINGJIAN_NOTARY_PROFILE`，没设就 ad-hoc；`QINGJIAN_TARGET` 指定架构，
   成品 `target/pkg/qingjian-<版本>-macos-<arm64|x86_64>.pkg`）；`scripts/uninstall.sh` 卸载。

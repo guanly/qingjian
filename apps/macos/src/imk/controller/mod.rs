@@ -132,6 +132,8 @@ define_class!(
                     h.engine.enter_input_box();
                     h.refresh_text_replacements();
                     h.reload_config_if_changed();
+                    // 配置刚重读过，名单是最新的：切进固定中英的应用就按名单来
+                    h.apply_app_mode();
                     h.mode_switch.reset();
                     h.watch.start();
                 });

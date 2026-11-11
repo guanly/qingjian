@@ -53,6 +53,15 @@ For example, with both on, new apps start in English, and switching Notepad to C
 Remembered modes last for as long as Qingjian is running, so closing and reopening an app still restores them; after Qingjian restarts, the default mode applies again.
 Changing either option or toggling 英文模式 (English mode) clears the remembered modes. When English mode is off, it's always Chinese and "Start in English mode" has no effect.
 
+### Fixing the mode per app (macOS)
+
+The same English group has two more rows: **固定为中文 (Fix to Chinese)** and **固定为英文 (Fix to English)**. Click 添加应用 (Add app) and pick a program (choose the `.app` in `/Applications`) and it shows up under that row:
+
+- Switching into the app starts in the mode set here, with no need to press `Caps Lock` or, with Tap Shift on, to tap `Shift`. A 中 / 英 hint flashes once, and only when the mode actually changes.
+- `Caps Lock` inside that app (or a `Shift` tap with Tap Shift on) still switches for the moment; coming back to the app restores the fixed mode.
+- An app belongs to one side only: adding it to the other side moves it. An app listed on both sides (possible by hand-editing the config) counts as Chinese.
+- 移除 (Remove) at the end of the row un-fixes it, and `Caps Lock` decides again. The ⓘ on each row shows its bundle identifier, which is what the configuration file stores.
+
 ## Typing in English mode
 
 In English mode, the candidate window offers English word completions and spelling corrections as you type: `recieve` → receive, `seperate` → separate.

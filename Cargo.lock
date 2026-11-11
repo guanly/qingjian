@@ -4450,6 +4450,7 @@ dependencies = [
  "dotenvy",
  "flate2",
  "jiff",
+ "plist",
  "qingjian-clipboard",
  "qingjian-core",
  "qingjian-dictionary",

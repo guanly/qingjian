@@ -105,6 +105,8 @@
 | 切换键 | 三个勾选：单击 Shift / 单击 Ctrl / Ctrl + Alt + Space | `shortcut.switch_mode` | | Windows |
 | 英文模式也给候选 | 开关 | `general.english_candidates` | Tab 或方向键选词，不选时跟直接打字一样 | 全部 |
 | 只在写字的应用里给 | 勾选，挂在上一行下面 | `apps.english_candidates_on` | 浏览器、聊天、文档类应用；名单在配置文件里改 | 全部 |
+| 固定为中文 | 按钮「添加应用」，下面每条应用一行、行尾「移除」 | `apps.fixed_chinese` | 切进这些应用就用中文，不用再按 Caps Lock / Shift；在里面按了 Caps Lock 或单击 Shift 仍能临时切走，切回来又按固定的来 | macOS |
+| 固定为英文 | 按钮「添加应用」，下面每条应用一行、行尾「移除」 | `apps.fixed_english` | 同上，固定英文 | macOS |
 | Shift + 字母 | 分段：交给应用 / 进组句 | `general.shift_letter` | 进组句才能打出「C盘」 | 全部 |
 
 macOS 的切换键是 Caps Lock，由系统决定，所以不显示「切换键」这一行。

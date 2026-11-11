@@ -29,6 +29,8 @@ qingjian-learning.workspace = true
 qingjian-translate.workspace = true
 # 导入时的文件选择窗口（与 Windows 旧设置程序同一个）
 rfd = "0.17"
+# 中英文页：从 .app 的 Info.plist 认 bundle identifier 与名字
+plist.workspace = true
 dotenvy.workspace = true
 # 实验功能：下载模型（清单、分块核对、解压）
 reqwest = { workspace = true, features = ["native-tls", "system-proxy"] }

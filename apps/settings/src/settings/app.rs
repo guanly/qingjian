@@ -252,6 +252,7 @@ impl App for Settings {
                 }
             }
             Message::ExcludeClipboardApp => self.exclude_clipboard_app(),
+            Message::FixAppMode(english) => self.fix_app_mode(english),
             Message::ToggleSources => self.sources_open = !self.sources_open,
             Message::StatsCloud(cloud) => self.stats_cloud = cloud,
             Message::Search(edit) => {

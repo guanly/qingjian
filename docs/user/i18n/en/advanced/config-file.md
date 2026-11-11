@@ -65,10 +65,13 @@ All settings are kept in one TOML text file, `config.toml`, with a note for ever
 | `[shortcut] raw_letters` | 快捷键 → 上屏原始字母 (Shortcuts → Commit raw letters, macOS) | One symbol key, `` "`" `` by default (the key printed `·`); space, enter and `-` are read as the default |
 | The `[predict]` section | 云服务 (Cloud services) | See below |
 | `[general] input_log` | 高级 → 记录输入日志 (Advanced → Record input log) | `true` / `false` |
+| `[apps] fixed_chinese`, `fixed_english` | 中英文 → 固定为中文 / 固定为英文 (Chinese/English → Fix to Chinese / Fix to English) | App lists of bundle identifiers, `*` at the end matches a prefix (macOS); switching into a listed app starts in the mode set here |
 
 ### The app list for English candidates
 
 Which apps get candidates in English mode is decided by the list in the `apps` part of the configuration file (when 设置 → 中英文 → 只在写字的应用里给 (Settings → Chinese/English → Only in writing apps) is on). Each entry in the list has a note; add or remove apps as described.
+
+The `apps` section also holds two lists that fix the Chinese/English mode (macOS): one for Chinese, one for English. Entries added with 添加应用 (Add app) in 设置 → 中英文 (Settings → Chinese/English) are written there in the same format. An app on both lists counts as Chinese.
 
 ## AI services
 

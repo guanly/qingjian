@@ -83,6 +83,8 @@ pub enum Message {
     ToggleSources,
     /// 选一个程序，从它复制的内容不进剪贴板历史。
     ExcludeClipboardApp,
+    /// 选一个应用，切进去就固定为中文（`false`）或英文（`true`）。
+    FixAppMode(bool),
     /// 统计页切到「云服务」层（`false` 回「输入」层）。
     StatsCloud(bool),
     /// 搜索框里打字。
