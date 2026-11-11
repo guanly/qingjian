@@ -217,14 +217,19 @@ fn remembered_apps(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Ren
             ("remember-remove", app.as_str()),
             Message::SetList("apps", "remember_mode", kept),
         )?;
-        // 界面上显示应用自己的名字；名字与别的应用撞车时下面再标出 bundle identifier，
-        // 否则「IntelliJ IDEA」加的是哪一个看不出来（加错了这一行永远不生效）
-        let (name, note) = crate::settings::apps::label_with_note(app);
-        let mut row = SettingRow::new(&name).info(app);
-        if let Some(note) = &note {
-            row = row.detail(note);
+        // 名字下面直接写出 bundle identifier：两个应用可能同名（`IntelliJ IDEA` 与
+        // `IntelliJ IDEA CE`），不写出来就分不清加的是哪一个；靠 ⓘ 悬停会盖住下一行
+        let (name, detail) = crate::settings::apps::label_with_detail(app);
+        let mut row = SettingRow::new(&name);
+        if let Some(detail) = &detail {
+            row = row.detail(detail);
         }
-        rows.push(row.control(remove).build(ui, theme)?);
+        // 名字和标识都搜得到
+        rows.push(
+            row.keywords(&[app.as_str()])
+                .control(remove)
+                .build(ui, theme)?,
+        );
     }
     Ok(rows)
 }

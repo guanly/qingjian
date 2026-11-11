@@ -62,8 +62,10 @@ The same English group has one more row: **记住中英模式的应用 (Apps tha
 - An app with no record yet starts from 默认英文模式 (Start in English mode); switching inside it afterwards (a `Shift` tap, or `Caps Lock` when Tap Shift is off) updates the record.
 - Records live in `app-modes.json` in the user data directory and survive restarting Qingjian or the Mac.
 - Apps not on the list share one mode, so switching away and back doesn't reset them individually.
-- 移除 (Remove) at the end of the row stops remembering it, and `Caps Lock` / the switch key decide again. The ⓘ on each row shows its bundle identifier, which is what the configuration file stores.
-- Two apps can share a display name (both IntelliJ IDEA and IntelliJ IDEA CE are called "IntelliJ IDEA"); when that happens the row also shows the identifier under the name. Adding the wrong one still works but never takes effect — entering that app just keeps the mode you came from.
+- Every row shows its bundle identifier right under the name — that is what the configuration file stores. Two apps can share a
+  display name (both IntelliJ IDEA and IntelliJ IDEA CE are called "IntelliJ IDEA"), so go by the identifier when removing one.
+  Adding the wrong one still works but never takes effect — entering that app just keeps the mode you came from.
+- 移除 (Remove) at the end of the row stops remembering it, and `Caps Lock` / the switch key decide again.
 
 ## Typing in English mode
 

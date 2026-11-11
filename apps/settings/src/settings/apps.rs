@@ -56,22 +56,16 @@ pub(crate) fn label(bundle: &str) -> String {
         .unwrap_or_else(|| bundle.to_owned())
 }
 
-/// 界面上显示的名字，以及需要额外标出标识时的那一行说明。
+/// 界面上显示的名字，以及名字下面单独一行写出的 bundle identifier。
 ///
-/// 两个应用可能同名：`IntelliJ IDEA` 与 `IntelliJ IDEA CE` 的 `CFBundleName` 都是 “IntelliJ IDEA”，
-/// 名单里只写名字就分不出加的是哪一个（加错了那一行永远不生效，看着就是「记住模式没起作用」）。
-/// 名字撞车时把 bundle identifier 露在名字下面，名字唯一的照旧只显示名字。
-pub(crate) fn label_with_note(bundle: &str) -> (String, Option<String>) {
+/// 名单里存的是 identifier，界面上得能一眼看出加的是哪一个：两个应用可能同名
+/// （`IntelliJ IDEA` 与 `IntelliJ IDEA CE` 的 `CFBundleName` 都是 “IntelliJ IDEA”），光看名字分不出来，
+/// 加错了那一行永远不生效、看着就是「记住模式没起作用」。标识直接写在名字下面，不靠 ⓘ 悬停——
+/// 气泡会盖住下一行，还是看不清。名字本来就是 identifier（没装、扫不到）时不重复写。
+pub(crate) fn label_with_detail(bundle: &str) -> (String, Option<String>) {
     let name = label(bundle);
-    let note = shared_name(bundle, &name, installed()).then(|| bundle.to_owned());
-    (name, note)
-}
-
-/// 除了 `bundle` 自己，还有没有别的已安装应用叫这个名字。
-fn shared_name(bundle: &str, name: &str, installed: &HashMap<String, String>) -> bool {
-    installed
-        .iter()
-        .any(|(other, other_name)| !other.eq_ignore_ascii_case(bundle) && other_name == name)
+    let detail = (!name.eq_ignore_ascii_case(bundle)).then(|| bundle.to_owned());
+    (name, detail)
 }
 
 /// 本机应用的 bundle identifier → 名字（每个进程扫一次，几十毫秒）。
@@ -134,8 +128,6 @@ fn read_info(app: &Path) -> Option<(String, String)> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
 
     /// 系统自带的终端：scan 扫得到，名字是它的显示名而不是路径。
@@ -155,40 +147,19 @@ mod tests {
         );
     }
 
-    /// 两个 IntelliJ 的 `CFBundleName` 都是 “IntelliJ IDEA”：这种时候名字下面要带出标识。
-    fn intellij_installs() -> HashMap<String, String> {
-        HashMap::from([
-            (
-                "com.jetbrains.intellij".to_owned(),
-                "IntelliJ IDEA".to_owned(),
-            ),
-            (
-                "com.jetbrains.intellij.ce".to_owned(),
-                "IntelliJ IDEA".to_owned(),
-            ),
-            ("com.apple.Terminal".to_owned(), "Terminal".to_owned()),
-        ])
-    }
-
+    /// 两个 IntelliJ 的 `CFBundleName` 都是 “IntelliJ IDEA”：分不分得清全靠名字下面那行标识。
     #[test]
-    fn a_shared_display_name_gets_the_bundle_identifier_below_it() {
-        let installed = intellij_installs();
-        assert!(
-            shared_name("com.jetbrains.intellij.ce", "IntelliJ IDEA", &installed),
-            "同名 → 要标出标识"
+    fn a_listed_app_always_shows_its_bundle_identifier_below_the_name() {
+        // 没装的应用名字就是 identifier，不用再写一遍
+        assert_eq!(
+            label_with_detail("com.example.NotInstalled"),
+            ("com.example.NotInstalled".to_owned(), None)
         );
-        assert!(shared_name(
-            "com.jetbrains.intellij",
-            "IntelliJ IDEA",
-            &installed
-        ));
-        assert!(
-            !shared_name("com.apple.Terminal", "Terminal", &installed),
-            "名字唯一就不啰嗦"
-        );
-        assert!(
-            !shared_name("com.example.Gone", "com.example.Gone", &installed),
-            "没装的应用照原样显示标识，不用再标一遍"
+        #[cfg(target_os = "macos")]
+        assert_eq!(
+            label_with_detail("com.apple.Terminal"),
+            ("Terminal".to_owned(), Some("com.apple.Terminal".to_owned())),
+            "名字与 identifier 不同就写出来，不靠悬停"
         );
     }
 }
