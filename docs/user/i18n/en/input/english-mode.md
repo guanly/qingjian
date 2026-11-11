@@ -46,21 +46,24 @@ When you need English, switch to another input method with `Win + Space` on Wind
 
 The 英文 (English) group in 设置 → 中英文 (Settings → Chinese/English) has two options:
 
-- **默认英文模式 (Start in English mode)** (Windows, Linux): on Windows, Qingjian starts in English; on Linux, newly opened apps and windows start in English. When off, they start in Chinese.
+- **默认英文模式 (Start in English mode)**: Qingjian starts in English (Windows, Linux, macOS); when off, it starts in Chinese.
+  On macOS it does one more job: an app on the list below with no record yet starts in this mode the first time you enter it.
 - **按应用记住中英模式 (Remember mode per app)** (Windows): switching back to an app restores the mode it had last time. Apps with no record use the default mode above, and all windows of one app share a mode.
 
 For example, with both on, new apps start in English, and switching Notepad to Chinese doesn't change the browser's English mode.
-Remembered modes last for as long as Qingjian is running, so closing and reopening an app still restores them; after Qingjian restarts, the default mode applies again.
+On Windows remembered modes last for as long as Qingjian is running, so closing and reopening an app still restores them; after Qingjian restarts, the default mode applies again.
 Changing either option or toggling 英文模式 (English mode) clears the remembered modes. When English mode is off, it's always Chinese and "Start in English mode" has no effect.
 
-### Fixing the mode per app (macOS)
+### Letting apps remember the mode (macOS)
 
-The same English group has two more rows: **固定为中文 (Fix to Chinese)** and **固定为英文 (Fix to English)**. Click 添加应用 (Add app) and pick a program (choose the `.app` in `/Applications`) and it shows up under that row:
+The same English group has one more row: **记住中英模式的应用 (Apps that remember their mode)**. Click 添加应用 (Add app) and pick a program (choose the `.app` in `/Applications`) and it shows up under that row:
 
-- Switching into the app starts in the mode set here, with no need to press `Caps Lock` or, with Tap Shift on, to tap `Shift`. A 中 / 英 hint flashes once, and only when the mode actually changes.
-- `Caps Lock` inside that app (or a `Shift` tap with Tap Shift on) still switches for the moment; coming back to the app restores the fixed mode.
-- An app belongs to one side only: adding it to the other side moves it. An app listed on both sides (possible by hand-editing the config) counts as Chinese.
-- 移除 (Remove) at the end of the row un-fixes it, and `Caps Lock` decides again. The ⓘ on each row shows its bundle identifier, which is what the configuration file stores.
+- Each listed app keeps the mode it was last used in and restores it when you come back, with no need to press `Caps Lock` or, with Tap Shift on, to tap `Shift`. A 中 / 英 hint flashes once, and only when the mode actually changes.
+- An app with no record yet starts from 默认英文模式 (Start in English mode); switching inside it afterwards (a `Shift` tap, or `Caps Lock` when Tap Shift is off) updates the record.
+- Records live in `app-modes.json` in the user data directory and survive restarting Qingjian or the Mac.
+- Apps not on the list share one mode, so switching away and back doesn't reset them individually.
+- 移除 (Remove) at the end of the row stops remembering it, and `Caps Lock` / the switch key decide again. The ⓘ on each row shows its bundle identifier, which is what the configuration file stores.
+- Two apps can share a display name (both IntelliJ IDEA and IntelliJ IDEA CE are called "IntelliJ IDEA"); when that happens the row also shows the identifier under the name. Adding the wrong one still works but never takes effect — entering that app just keeps the mode you came from.
 
 ## Typing in English mode
 

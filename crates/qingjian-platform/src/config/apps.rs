@@ -116,8 +116,8 @@ pub const DEFAULT_ENGLISH_CANDIDATES_ON: &[&str] = DEFAULT_ENGLISH_CANDIDATES_ON
 /// Linux 上是 fcitx5 认到的应用名。
 ///
 /// 两件事：英文模式给不给候选（先看白名单 `english_candidates_on`，再用 `english_candidates_off` 排除，
-/// 全局开关 `[general] english_candidates` 关着时两份名单都不起作用）；切进去固定中英（`fixed_chinese` /
-/// `fixed_english`，现在只有 macOS 用）。
+/// 全局开关 `[general] english_candidates` 关着时两份名单都不起作用）；按应用记住中英模式
+/// （`remember_mode`，现在只有 macOS 用）。
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppsConfig {
@@ -127,11 +127,8 @@ pub struct AppsConfig {
     /// 从白名单里排除的应用（配合 `"*"` 用：处处都给、只有这几个不给）。缺省空。
     pub english_candidates_off: Vec<String>,
 
-    /// 切进去就固定为中文的应用（macOS），写法同上。缺省空。
-    pub fixed_chinese: Vec<String>,
-
-    /// 切进去就固定为英文的应用（macOS）。缺省空。
-    pub fixed_english: Vec<String>,
+    /// 记住中英模式的应用（macOS）：切进这些应用时恢复它上次用的模式，在里面切换也会记下来。写法同上。缺省空。
+    pub remember_mode: Vec<String>,
 }
 
 impl Default for AppsConfig {
@@ -146,28 +143,20 @@ impl AppsConfig {
         Self {
             english_candidates_on: apps.iter().map(|s| (*s).to_owned()).collect(),
             english_candidates_off: Vec::new(),
-            fixed_chinese: Vec::new(),
-            fixed_english: Vec::new(),
+            remember_mode: Vec::new(),
         }
     }
 
-    /// 切到这个应用时要固定成哪种模式：`Some(true)` 英文、`Some(false)` 中文、`None` 不管。
+    /// 这个应用要不要记住中英模式（在 `remember_mode` 名单里）。
     ///
-    /// 两边都列时按中文算：固定英文会让字母原样交给应用，落在一个想打中文的地方代价更大。
-    /// 应用标识不认识（系统没报）时不管：这时连英文候选名单都不给，也就不该猜模式。
-    pub fn fixed_mode(&self, app: Option<&str>) -> Option<bool> {
-        let app = app?;
-        if self
-            .fixed_chinese
+    /// 应用标识不认识（系统没报）时不记：这时连英文候选名单都不给，也就不该往名单里塞东西。
+    pub fn remember_mode(&self, app: Option<&str>) -> bool {
+        let Some(app) = app.filter(|app| !app.is_empty()) else {
+            return false;
+        };
+        self.remember_mode
             .iter()
             .any(|pattern| matches_app(pattern, app))
-        {
-            return Some(false);
-        }
-        self.fixed_english
-            .iter()
-            .any(|pattern| matches_app(pattern, app))
-            .then_some(true)
     }
 
     /// 这个应用里英文模式给不给候选。`app` 不认识（应用没报）时只有 `"*"` 给：认不出来的地方宁可原样交给应用。
@@ -290,36 +279,36 @@ english_candidates_off = ["Photoshop.exe"]"#,
     }
 
     #[test]
-    fn fixed_lists_pick_the_mode_by_app() {
-        let apps: AppsConfig = toml::from_str(
-            r#"fixed_chinese = ["com.apple.Safari", "com.tencent.*"]
-fixed_english = ["com.apple.Terminal", "com.jetbrains.*"]"#,
-        )
-        .unwrap();
-        assert_eq!(apps.fixed_mode(Some("com.apple.Terminal")), Some(true));
-        assert_eq!(apps.fixed_mode(Some("com.jetbrains.goland")), Some(true));
-        assert_eq!(apps.fixed_mode(Some("com.apple.Safari")), Some(false));
-        assert_eq!(apps.fixed_mode(Some("com.tencent.xinWeChat")), Some(false));
-        // 没列的应用、没报应用名：不管，照旧看 Caps Lock / 切换键
-        assert_eq!(apps.fixed_mode(Some("com.apple.Notes")), None);
-        assert_eq!(apps.fixed_mode(None), None);
-        assert_eq!(apps.fixed_mode(Some("")), None);
-        // 缺省两边都空
-        assert_eq!(
-            AppsConfig::default().fixed_mode(Some("com.apple.Terminal")),
-            None
+    fn remember_list_only_covers_listed_apps() {
+        let apps: AppsConfig =
+            toml::from_str(r#"remember_mode = ["com.apple.Terminal", "com.jetbrains.*"]"#).unwrap();
+        assert!(apps.remember_mode(Some("com.apple.Terminal")));
+        assert!(
+            apps.remember_mode(Some("com.apple.terminal")),
+            "不区分大小写"
         );
+        assert!(
+            apps.remember_mode(Some("com.jetbrains.goland")),
+            "* 前缀匹配"
+        );
+        // 没列的应用、没报应用名：不记，照旧看 Caps Lock / 切换键
+        assert!(!apps.remember_mode(Some("com.apple.Notes")));
+        assert!(!apps.remember_mode(None));
+        assert!(!apps.remember_mode(Some("")));
+        // 缺省空名单
+        assert!(!AppsConfig::default().remember_mode(Some("com.apple.Terminal")));
     }
 
     #[test]
-    fn an_app_in_both_lists_is_fixed_to_chinese() {
-        let apps: AppsConfig =
-            toml::from_str("fixed_chinese = [\"x\"]\nfixed_english = [\"x\"]").unwrap();
-        assert_eq!(
-            apps.fixed_mode(Some("x")),
-            Some(false),
-            "两边都列时按中文算"
-        );
+    fn a_retired_fixed_list_is_ignored() {
+        // 下线的 `fixed_chinese` / `fixed_english` 留在老配置里不该让读取失败，也不再起任何作用
+        let apps: AppsConfig = toml::from_str(
+            r#"fixed_chinese = ["com.apple.Safari"]
+fixed_english = ["com.apple.Terminal"]"#,
+        )
+        .unwrap();
+        assert!(apps.remember_mode.is_empty());
+        assert!(!apps.remember_mode(Some("com.apple.Terminal")));
     }
 
     #[test]

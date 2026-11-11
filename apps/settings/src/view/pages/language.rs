@@ -1,4 +1,4 @@
-//! 「中英文」页：英文模式（开关、切换键、默认英文、按应用记住、按应用固定、英文候选、Shift + 字母），
+//! 「中英文」页：英文模式（开关、切换键、默认英文、按应用记住、按应用记住的名单、英文候选、Shift + 字母），
 //! 标点与中西文空格，悬浮状态条。
 
 use bamboo_slip::taffy::{FlexDirection, NodeId, Style};
@@ -38,11 +38,13 @@ pub fn language(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Render
             ui,
             page,
             tr("language.default_english"),
-            Some(if Feature::RememberModePerApp.here() {
-                tr("language.default_english_info")
-            } else {
-                tr("language.default_english_info_new_window")
-            }),
+            Some(
+                if Feature::RememberModePerApp.here() || Feature::RememberAppMode.here() {
+                    tr("language.default_english_info")
+                } else {
+                    tr("language.default_english_info_new_window")
+                },
+            ),
             ("general", "default_english"),
             general.default_english,
             !general.english_mode,
@@ -59,8 +61,8 @@ pub fn language(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Render
             !general.english_mode,
         )?);
     }
-    if Feature::FixedMode.here() {
-        rows.extend(fixed_modes(ui, page)?);
+    if Feature::RememberAppMode.here() {
+        rows.extend(remembered_apps(ui, page)?);
     }
     let only_in_apps = !config.apps.english_candidates_everywhere();
     let apps = if only_in_apps {
@@ -189,61 +191,40 @@ pub fn language(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, Render
     Ok(out)
 }
 
-/// 按应用固定中英：两组名单各带一个「添加应用」，每条能移除。
-fn fixed_modes(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, RenderError> {
+/// 按应用记住中英模式：一份名单带一个「添加应用」，每条能移除；应用显示名字，ⓘ 里留 bundle identifier。
+fn remembered_apps(ui: &mut Ui<Message>, page: &Page) -> Result<Vec<NodeId>, RenderError> {
     let theme = &page.theme;
-    let apps = &page.settings.config.apps;
-    let mut rows = Vec::new();
-    for (english, title, key, slot) in [
-        (
-            false,
-            tr("language.fixed_chinese"),
-            "fixed_chinese",
-            "fixed-chinese",
-        ),
-        (
-            true,
-            tr("language.fixed_english"),
-            "fixed_english",
-            "fixed-english",
-        ),
-    ] {
-        let add = Button::new(tr("language.fixed_add_app")).build(
+    let apps = &page.settings.config.apps.remember_mode;
+    let add = Button::new(tr("language.remember_add_app")).build(
+        ui,
+        theme,
+        "remember-add",
+        Message::RememberApp,
+    )?;
+    let mut rows = vec![with_notice(
+        ui,
+        page,
+        SettingRow::new(tr("language.remember_list"))
+            .info(tr("language.remember_list_info"))
+            .control(add),
+        "remember-app",
+    )?];
+    for app in apps {
+        let kept: Vec<String> = apps.iter().filter(|other| *other != app).cloned().collect();
+        let remove = Button::new(tr("language.remember_remove")).build(
             ui,
             theme,
-            ("fixed-add", key),
-            Message::FixAppMode(english),
+            ("remember-remove", app.as_str()),
+            Message::SetList("apps", "remember_mode", kept),
         )?;
-        rows.push(with_notice(
-            ui,
-            page,
-            SettingRow::new(title)
-                .info(tr("language.fixed_info"))
-                .control(add),
-            slot,
-        )?);
-        let list = if english {
-            &apps.fixed_english
-        } else {
-            &apps.fixed_chinese
-        };
-        for app in list {
-            let kept: Vec<String> = list.iter().filter(|other| *other != app).cloned().collect();
-            let remove = Button::new(tr("language.fixed_remove")).build(
-                ui,
-                theme,
-                ("fixed-remove", app.as_str()),
-                Message::SetList("apps", key, kept),
-            )?;
-            // 界面上显示应用自己的名字，ⓘ 里留 bundle identifier：配置文件里写的是它
-            let name = crate::settings::apps::label(app);
-            rows.push(
-                SettingRow::new(&name)
-                    .info(app)
-                    .control(remove)
-                    .build(ui, theme)?,
-            );
+        // 界面上显示应用自己的名字；名字与别的应用撞车时下面再标出 bundle identifier，
+        // 否则「IntelliJ IDEA」加的是哪一个看不出来（加错了这一行永远不生效）
+        let (name, note) = crate::settings::apps::label_with_note(app);
+        let mut row = SettingRow::new(&name).info(app);
+        if let Some(note) = &note {
+            row = row.detail(note);
         }
+        rows.push(row.control(remove).build(ui, theme)?);
     }
     Ok(rows)
 }

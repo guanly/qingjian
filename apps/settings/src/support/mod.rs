@@ -24,8 +24,8 @@ pub enum Feature {
     SystemCtrlSpace,
     DefaultEnglish,
     RememberModePerApp,
-    /// 按应用固定中英（macOS）：切进列出的应用就按中文或英文来。
-    FixedMode,
+    /// 按应用记住中英模式（macOS）：名单里的应用各自记着自己上次的模式，切回来时恢复。
+    RememberAppMode,
     /// 英文模式的全半角标点。
     EnglishPunctuation,
     AutoSpace,
@@ -77,7 +77,7 @@ impl Feature {
         Self::SystemCtrlSpace,
         Self::DefaultEnglish,
         Self::RememberModePerApp,
-        Self::FixedMode,
+        Self::RememberAppMode,
         Self::EnglishPunctuation,
         Self::AutoSpace,
         Self::StatusBar,
@@ -127,9 +127,9 @@ impl Feature {
             // macOS 只做了单击 Shift，Caps Lock 仍是系统那一套
             Self::SwitchKeyCombos => [No, Yes, Yes],
             Self::SystemCtrlSpace => [No, Yes, No],
-            Self::DefaultEnglish => [Todo, Yes, Yes],
+            Self::DefaultEnglish => [Yes, Yes, Yes],
             Self::RememberModePerApp => [Todo, Yes, Todo],
-            Self::FixedMode => [Yes, Todo, Todo],
+            Self::RememberAppMode => [Yes, Todo, Todo],
             // macOS 英文模式一律半角
             Self::EnglishPunctuation => [No, Yes, Yes],
             // 要读应用里光标前的字
@@ -177,7 +177,7 @@ impl Feature {
             Self::SystemCtrlSpace => "系统的 Ctrl + Space",
             Self::DefaultEnglish => "默认英文模式",
             Self::RememberModePerApp => "按应用记住中英模式",
-            Self::FixedMode => "按应用固定中英",
+            Self::RememberAppMode => "记住中英模式的应用",
             Self::EnglishPunctuation => "英文标点全半角",
             Self::AutoSpace => "中文与英文、数字之间自动加空格",
             Self::StatusBar => "悬浮状态条",
@@ -217,10 +217,7 @@ impl Feature {
             Self::SwitchKeys => &[(PageId::Language, "language.switch_keys")],
             Self::DefaultEnglish => &[(PageId::Language, "language.default_english")],
             Self::RememberModePerApp => &[(PageId::Language, "language.remember_per_app")],
-            Self::FixedMode => &[
-                (PageId::Language, "language.fixed_chinese"),
-                (PageId::Language, "language.fixed_english"),
-            ],
+            Self::RememberAppMode => &[(PageId::Language, "language.remember_list")],
             Self::AutoSpace => &[(PageId::Language, "language.auto_space")],
             Self::ExtraPageKeys => &[(PageId::Shortcuts, "shortcuts.extra_page_keys")],
             Self::CommitKeys => &[

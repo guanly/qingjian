@@ -49,7 +49,7 @@ use crate::menubar::{InputMenu, MenuAction};
 use cloud::PredictMonitor;
 use config::{ConfigWatch, TextReplacement};
 pub use init::init;
-use mode::{ModeOsd, ModeSwitch};
+use mode::{AppModes, ModeOsd, ModeSwitch};
 use model::RescoreMonitor;
 pub use presenting::TranslationJob;
 use presenting::{CandidateTranslation, KeyHintState, Notice};
@@ -73,6 +73,15 @@ pub struct Host {
 
     /// 单击 Shift 切中英（勾了 `[shortcut] switch_mode` 的 shift 时）；定时器只在激活期间跑。
     pub mode_switch: ModeSwitch,
+
+    /// 各应用上次用的中英模式（配置 `[apps] remember_mode` 里的应用），落在用户数据目录。
+    pub app_modes: AppModes,
+
+    /// 配置里的「默认英文模式」：`[apps] remember_mode` 里还没记录过的应用头一次进去用它。
+    default_english: bool,
+
+    /// 上次套用的「默认英文模式」：只有它变了才重置中英，别的配置热加载不覆盖用户刚切的模式。
+    applied_default_english: Option<bool>,
 
     /// 中 / 英与大小写切换时右上角一闪而过的提示。
     pub osd: ModeOsd,

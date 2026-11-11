@@ -74,6 +74,14 @@ impl Host {
         // 中英切换键：macOS 只认单击 Shift（勾上后 Caps Lock 退化成只管大小写），其余勾选项不用但要说一声
         self.mode_switch
             .set_enabled(config.shortcut.switch_mode.shift);
+        // 默认英文模式：启动时套用一次，之后只在它本身变了才重置——别的配置热加载不能覆盖用户刚切出来的模式。
+        // 与 Windows 同口径：英文模式关着时这一项不生效
+        let default_english = config.general.english_mode && config.general.default_english;
+        self.default_english = default_english;
+        if self.applied_default_english != Some(default_english) {
+            self.applied_default_english = Some(default_english);
+            self.mode_switch.reset_to(default_english);
+        }
         if config.shortcut.switch_mode.control || config.shortcut.switch_mode.ctrl_alt_space {
             tracing::warn!(
                 "macOS 只支持单击 Shift 作为中英切换键，配置文件里写的 control / ctrl+alt+space 已忽略"

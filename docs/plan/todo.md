@@ -149,9 +149,8 @@
 - [ ] 设置项的平台缺口（设置程序 `apps/settings/src/support/` 表里标「待实现」的项，输入法接上之前设置里不显示；测试逐条对照这里）：
   - [ ] 辅码：Linux
   - [ ] 形码与自定义方案：Linux
-  - [ ] 默认英文模式：macOS
   - [ ] 按应用记住中英模式：macOS、Linux
-  - [ ] 按应用固定中英：Windows、Linux
+  - [ ] 记住中英模式的应用：Windows、Linux
   - [ ] 中文与英文、数字之间自动加空格：Linux
   - [ ] 横排时 ↑ / ↓ 展开成多行：Linux
   - [ ] 横排时翻页键展开成多行：Linux

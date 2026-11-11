@@ -127,6 +127,7 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
     let monitor = PredictMonitor::new(mtm);
     let watch = ConfigWatch::new(mtm);
     let mode_switch = ModeSwitch::default();
+    let app_modes = AppModes::load_in(paths::user_data_dir());
     let osd = ModeOsd::new(mtm);
     HOST.with(|host| {
         *host.borrow_mut() = Some(Host {
@@ -136,6 +137,9 @@ pub fn init(mtm: MainThreadMarker, info: &BundleInfo) -> Result<(), HostError> {
             settings,
             watch,
             mode_switch,
+            app_modes,
+            default_english: false,
+            applied_default_english: None,
             osd,
             last_osd_english: None,
             last_osd_caps: None,

@@ -1,5 +1,5 @@
-//! 单击 Shift 切换中 / 英（配置 `[shortcut] switch_mode` 勾了 shift 时），以及按应用固定中英
-//! （配置 `[apps] fixed_chinese` / `fixed_english`）。
+//! 单击 Shift 切换中 / 英（配置 `[shortcut] switch_mode` 勾了 shift 时），以及按应用记住中英
+//! （配置 `[apps] remember_mode` 名单里的应用各记着自己上次的模式）。
 //!
 //! 边沿从修饰键事件来：控制器在 `recognizedEvents:` 里声明了 flagsChanged
 //! （缺省只回 `NSKeyDownMask`，不声明就一个修饰键事件都收不到，Shift 的按下 / 抬起只能靠轮询采样，
@@ -42,15 +42,15 @@ pub struct ModeSwitch {
     /// 上次切换的时刻，[`BOUNCE_WINDOW`] 内完成的单击当抖动丢掉。
     toggled_at: Option<Instant>,
 
-    /// 单击 Shift 切出来的持久英文模式；`enabled` 为假时无意义（`set_enabled(false)` 会清零）。
+    /// 单击 Shift 切出来的持久英文模式。
     english: bool,
 
-    /// 按应用固定的模式（`[apps] fixed_chinese` / `fixed_english`）：`Some(true)` 英文、`Some(false)` 中文、
-    /// `None` 不管。切进应用时设定，用户在那个应用里按 Caps Lock / 单击 Shift 后清掉。
-    forced: Option<bool>,
+    /// 切进应用时恢复的模式（`[apps] remember_mode` 里记的那些）：`Some(true)` 英文、`Some(false)` 中文、
+    /// `None` 不管。用户在那个应用里按 Caps Lock / 单击 Shift 后清掉。
+    restored: Option<bool>,
 
-    /// 设 [`Self::forced`] 那一刻的 Caps Lock 状态：它变了就说明用户按过 Caps Lock。
-    forced_caps: bool,
+    /// 设 [`Self::restored`] 那一刻的 Caps Lock 状态：它变了就说明用户按过 Caps Lock。
+    restored_caps: bool,
 }
 
 impl ModeSwitch {
@@ -76,22 +76,35 @@ impl ModeSwitch {
         }
     }
 
-    /// 切进应用时按 `[apps]` 的名单固定中英：`english` 是固定成哪种，`None` 就是不固定；`caps` 是此刻的
-    /// Caps Lock 状态，之后它一变就当用户自己接管了。
-    pub fn force(&mut self, english: Option<bool>, caps: bool) {
-        self.forced = english;
-        self.forced_caps = caps;
+    /// 配置里的「默认英文模式」：只在启动与它本身变了时套用，别的配置热加载不覆盖用户刚切出来的模式。
+    pub fn reset_to(&mut self, default_english: bool) {
+        self.english = default_english;
+        self.restored = None;
+        self.pending = None;
     }
 
-    /// 当前有效的固定模式；Caps Lock 与设定时不同（用户按过）就不算数，交回给 Caps Lock。
-    pub fn forced_mode(&self, caps: bool) -> Option<bool> {
-        self.forced.filter(|_| caps == self.forced_caps)
+    /// 切进应用时恢复它上次用的模式：`english` 是恢复成哪种，`None` 就是不恢复、沿用当前模式；
+    /// `caps` 是此刻的 Caps Lock 状态，之后它一变就当用户自己接管了。
+    ///
+    /// 同时把 `english` 字段对齐到恢复值：没勾「单击 Shift」时模式看 Caps Lock，用户一按 Caps Lock
+    /// 恢复值就让位，这时不该跳到切应用之前那个模式。
+    pub fn restore(&mut self, english: Option<bool>, caps: bool) {
+        self.restored = english;
+        self.restored_caps = caps;
+        if let Some(english) = english {
+            self.english = english;
+        }
     }
 
-    /// Caps Lock 动过了：这个应用里不再固定，之后跟着 Caps Lock 走。返回是否真的放掉了。
-    pub fn release_forced(&mut self, caps: bool) -> bool {
-        if self.forced.is_some() && caps != self.forced_caps {
-            self.forced = None;
+    /// 当前有效的恢复模式；Caps Lock 与设定时不同（用户按过）就不算数，交回给 Caps Lock。
+    pub fn restored_mode(&self, caps: bool) -> Option<bool> {
+        self.restored.filter(|_| caps == self.restored_caps)
+    }
+
+    /// Caps Lock 动过了：这个应用里不再按记下来的模式来，之后跟着 Caps Lock 走。返回是否真的放掉了。
+    pub fn release_restored(&mut self, caps: bool) -> bool {
+        if self.restored.is_some() && caps != self.restored_caps {
+            self.restored = None;
             return true;
         }
         false
@@ -109,7 +122,7 @@ impl ModeSwitch {
     }
 
     /// 修饰键事件：`key_code` 那次按下（`down`）。构成一次「单击 Shift」返回 `true`。
-    /// `current` 是此刻显示给用户的中英模式（按应用固定时可能与 `english` 字段不同），切换从它翻。
+    /// `current` 是此刻显示给用户的中英模式（按应用记住的模式可能与 `english` 字段不同），切换从它翻。
     pub fn shift_event(&mut self, key_code: u16, down: bool, current: bool) -> bool {
         self.shift_event_at(key_code, down, Instant::now(), current)
     }
@@ -143,20 +156,20 @@ impl ModeSwitch {
             return false;
         }
         self.english = !current;
-        // 单击 Shift 就是用户要自己定：按应用固定的模式从这一下起让位
-        self.forced = None;
+        // 单击 Shift 就是用户要自己定：切进应用时恢复的模式从这一下起让位
+        self.restored = None;
         self.toggled_at = Some(now);
         true
     }
 }
 
 impl Host {
-    /// 中英模式：按应用固定时以它为准；勾了「单击 Shift」时由 Shift 的切换决定（Caps Lock 退化成只管大小写），
+    /// 中英模式：按应用的记录恢复时以它为准；勾了「单击 Shift」时由 Shift 的切换决定（Caps Lock 退化成只管大小写），
     /// 没勾看 Caps Lock。
     pub fn english_mode(&self) -> bool {
         let caps = modifiers::caps_lock_on();
-        if let Some(forced) = self.mode_switch.forced_mode(caps) {
-            return forced;
+        if let Some(restored) = self.mode_switch.restored_mode(caps) {
+            return restored;
         }
         if self.mode_switch.enabled() {
             self.mode_switch.english()
@@ -165,24 +178,44 @@ impl Host {
         }
     }
 
-    /// 切到一个应用：`[apps] fixed_chinese` / `fixed_english` 里列了它就固定中英。模式真的变了才闪一次
+    /// 切到一个应用：`[apps] remember_mode` 里列了它就恢复它上次用的模式，没记录过则用
+    /// 「默认英文模式」（`[general] default_english`），并把这个起点记下来。模式真的变了才闪一次
     /// 「中」/「英」，免得每切一次应用都弹。
     pub fn apply_app_mode(&mut self) {
-        let wanted = self.apps.fixed_mode(self.engine.application());
+        let app = self.engine.application();
+        // 有记录照记录来；没记录过就把默认模式当作它的起点
+        let wanted = app
+            .filter(|app| self.apps.remember_mode(Some(app)))
+            .map(|app| self.app_modes.get(app).unwrap_or(self.default_english));
         let before = self.english_mode();
-        self.mode_switch.force(wanted, modifiers::caps_lock_on());
+        self.mode_switch.restore(wanted, modifiers::caps_lock_on());
         let after = self.english_mode();
+        if let (Some(app), Some(mode)) = (app, wanted) {
+            // 第一次进来记下起点：下次切换回来照它还
+            self.app_modes.set(app, mode);
+        }
         if before == after {
             return;
         }
         tracing::info!(
             english = after,
-            app = self.engine.application().unwrap_or(""),
-            "按应用固定中英"
+            app = app.unwrap_or(""),
+            "per-app mode restored"
         );
         self.osd.show(if after { "英" } else { "中" });
         // 已经提示过了：刷新状态时不要再闪一次
         self.last_osd_english = Some(after);
+    }
+
+    /// 这个应用在 `[apps] remember_mode` 里时，把它现在的模式记下来。
+    fn remember_app_mode(&mut self) {
+        let Some(app) = self.engine.application() else {
+            return;
+        };
+        if !self.apps.remember_mode(Some(app)) {
+            return;
+        }
+        self.app_modes.set(app, self.english_mode());
     }
 
     /// 英文模式下一个字母要不要大写：勾了「单击 Shift」时 Caps Lock 只管大小写（与 Shift 异或）；
@@ -198,12 +231,13 @@ impl Host {
     /// 收到了修饰键事件（`recognizedEvents:` 里的 flagsChanged）：Shift 的按下 / 抬起在这里判定，
     /// 这次切换了中英返回 `true`。
     pub fn shift_event(&mut self, key_code: u16, down: bool) -> bool {
-        // 按应用固定时 `english` 字段可能不是屏幕上那个模式，从显示出来的模式翻
+        // 恢复出来的模式可能不是 `english` 字段那个，从显示出来的模式翻
         let current = self.english_mode();
         if !self.mode_switch.shift_event(key_code, down, current) {
             return false;
         }
         tracing::info!(english = self.english_mode(), "单击 Shift 切换中英");
+        self.remember_app_mode();
         self.refresh_mode_ui();
         self.render();
         true
@@ -235,13 +269,16 @@ impl Host {
     /// 任一按键按下：除 Shift 自己以外的任何键（含别的修饰键）都作废待定的单击 Shift
     /// （Shift + 字母 / Shift + Cmd 组合都不该被当成单击）。
     ///
-    /// 顺带看 Caps Lock 有没有被按过：固定在某个模式的应用里，用户按 Caps Lock 就是要自己接管，
-    /// 从这一下起交回给 Caps Lock。
+    /// 顺带看 Caps Lock 有没有被按过：记住模式的应用里，用户按 Caps Lock 就是要自己接管，
+    /// 从这一下起交回给 Caps Lock，并把接管后的模式记成这个应用的。
     pub fn note_key(&mut self, key_code: u16) {
         if !is_shift_key(key_code) {
             self.mode_switch.note_key();
         }
-        self.mode_switch.release_forced(modifiers::caps_lock_on());
+        if self.mode_switch.release_restored(modifiers::caps_lock_on()) {
+            self.remember_app_mode();
+            self.refresh_mode_ui();
+        }
     }
 }
 
@@ -349,37 +386,40 @@ mod tests {
     }
 
     #[test]
-    fn a_fixed_app_mode_wins_until_caps_lock_is_pressed() {
+    fn a_remembered_app_mode_wins_until_caps_lock_is_pressed() {
         // 没勾单击 Shift：模式本来由 Caps Lock 决定
         let mut switch = ModeSwitch::default();
-        switch.force(Some(true), false);
+        switch.restore(Some(true), false);
         assert_eq!(
-            switch.forced_mode(false),
+            switch.restored_mode(false),
             Some(true),
-            "固定英文压过 Caps Lock"
+            "记下来的英文压过 Caps Lock"
         );
+        assert!(switch.english(), "恢复时 english 字段跟着对齐");
         // Caps Lock 被按过：这个应用里交回给 Caps Lock
-        assert!(switch.release_forced(true));
-        assert_eq!(switch.forced_mode(true), None);
-        // 切走再切回：重新按名单固定
-        switch.force(Some(false), true);
-        assert_eq!(switch.forced_mode(true), Some(false));
-        // 名单里没有的应用：清掉上一个应用的固定
-        switch.force(None, true);
-        assert_eq!(switch.forced_mode(true), None);
-        // 没固定时什么都不放
-        assert!(!switch.release_forced(false));
+        assert!(switch.release_restored(true));
+        assert_eq!(switch.restored_mode(true), None);
+        // 交回之后不再跳回切应用之前的模式
+        assert!(switch.english(), "english 与恢复值一致，模式不跳");
+        // 切走再切回：重新按记录恢复
+        switch.restore(Some(false), true);
+        assert_eq!(switch.restored_mode(true), Some(false));
+        // 名单里没有的应用：清掉上一个应用的恢复值
+        switch.restore(None, true);
+        assert_eq!(switch.restored_mode(true), None);
+        // 没恢复时什么都不放
+        assert!(!switch.release_restored(false));
     }
 
     #[test]
-    fn a_shift_click_takes_over_from_the_fixed_mode() {
+    fn a_shift_click_takes_over_from_the_remembered_mode() {
         let mut switch = enabled();
-        switch.force(Some(true), false);
-        // 固定英文时单击一次就该到中文：从显示出来的模式翻，而不是从 english 字段
+        switch.restore(Some(true), false);
+        // 记着英文时单击一次就该到中文：从显示出来的模式翻
         let start = Instant::now();
-        let current = switch.forced_mode(false).unwrap_or(switch.english());
+        let current = switch.restored_mode(false).unwrap_or(switch.english());
         assert!(tap_at(&mut switch, start, current));
         assert!(!switch.english(), "切到了中文");
-        assert_eq!(switch.forced_mode(false), None, "固定模式让位");
+        assert_eq!(switch.restored_mode(false), None, "恢复值让位");
     }
 }

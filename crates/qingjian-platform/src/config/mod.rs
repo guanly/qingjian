@@ -168,11 +168,9 @@ english_candidates_on = [
   "com.tencent.xinWeChat", "com.tencent.qq", "com.tencent.WeWorkMac", "com.alibaba.DingTalkMac", "com.electron.lark",
   "ru.keepcoder.Telegram", "com.tdesktop.Telegram", "com.hnc.Discord", "com.tinyspeck.slackmacgap", "md.obsidian", "notion.id", "abnerworks.Typora",
 ]
-# 切进去就固定中英的应用：回到这些应用时不用再按 Caps Lock / Shift，直接按这里定的模式来。
-# 在那个应用里按 Caps Lock 或单击 Shift 仍然能临时切走，下次切回来又按固定的来。两边都列时按中文算
-# 例：fixed_english = ["com.apple.Terminal", "com.microsoft.VSCode"]，写 ["*"] 就处处一律
-fixed_chinese = []
-fixed_english = []
+# 记住中英模式的应用：切进这些应用时恢复它上次用的模式，在里面切换也会记下来。
+# 没记录过的应用头一次进去用「默认英文模式」（`[general] default_english`）。例：["com.apple.Terminal"]，写 ["*"] 就处处都记
+remember_mode = []
 "#
     };
 }
